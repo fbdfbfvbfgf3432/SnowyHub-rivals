@@ -582,13 +582,25 @@ function Intro.build(onDone)
     })
 
     -- intro sound
+    -- intro sound: parent to SoundService so it survives screen:Destroy()
     pcall(function()
-        local sound = UI.new("Sound", {
-            SoundId = INTRO_SOUND_ID,
-            Volume = 1.6,
-            Parent = screen,
-        })
+        local sound = Instance.new("Sound")
+        sound.Name = "SnowyIntroSound"
+        sound.SoundId = INTRO_SOUND_ID
+        sound.Volume = 2.5
+        sound.PlayOnRemove = false
+        sound.Parent = SoundService
+        -- preload then play so it doesn't start on an unloaded buffer
+        pcall(function()
+            local cp = game:GetService("ContentProvider")
+            cp:PreloadAsync({ sound })
+        end)
         sound:Play()
+        sound.Ended:Connect(function() pcall(function() sound:Destroy() end) end)
+        -- hard cleanup after 15s in case Ended never fires
+        task.delay(15, function()
+            if sound and sound.Parent then pcall(function() sound:Destroy() end) end
+        end)
     end)
 
     print("[SnowyHub] intro built, starting bar fill")
@@ -908,65 +920,138 @@ function Hub.build()
         Parent = sidebar,
     })
 
-    -- sidebar top: hollow purple logo + wordmark + chinese
-    local sideTop = UI.new("Frame", {
-        Size = UDim2.new(1, 0, 0, 160),
+    -- sidebar top BANNER: gradient panel with hollow purple centerpiece
+    local banner = UI.new("Frame", {
+        Size = UDim2.new(1, 0, 0, 140),
+        BackgroundColor3 = Theme.Panel2,
+        BorderSizePixel = 0,
+        ZIndex = 52,
+        Parent = sidebar,
+    })
+    UI.corner(banner, 12)
+    -- cover rounded bottom to keep sharp divider with content below
+    UI.new("Frame", {
+        Position = UDim2.new(0, 0, 1, -12),
+        Size = UDim2.new(1, 0, 0, 12),
+        BackgroundColor3 = Theme.Panel2,
+        BorderSizePixel = 0,
+        ZIndex = 52,
+        Parent = banner,
+    })
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 30, 110)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(40, 20, 80)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 12, 42)),
+        },
+        Rotation = 135,
+        Parent = banner,
+    })
+
+    -- animated hollow purple logo centered in banner
+    local sideLogoHost = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 110, 0, 110),
+        BackgroundTransparency = 1,
+        ZIndex = 53,
+        Parent = banner,
+    })
+    Intro.makeHollowPurple(sideLogoHost, 80, 53)
+
+    -- "Snowy Hub" wordmark + Chinese below the banner
+    local nameRow = UI.new("Frame", {
+        Position = UDim2.new(0, 0, 0, 148),
+        Size = UDim2.new(1, 0, 0, 48),
         BackgroundTransparency = 1,
         ZIndex = 52,
         Parent = sidebar,
     })
+    UI.pad(nameRow, 0, 14, 0, 14)
 
-    local sideLogoHost = UI.new("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0),
-        Position = UDim2.new(0.5, 0, 0, 10),
-        Size = UDim2.new(0, 100, 0, 100),
-        BackgroundTransparency = 1,
+    local diamond = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0, 0.5),
+        Position = UDim2.new(0, 0, 0.5, -4),
+        Size = UDim2.new(0, 10, 0, 10),
+        BackgroundColor3 = Theme.Accent,
+        BorderSizePixel = 0,
+        Rotation = 45,
         ZIndex = 53,
-        Parent = sideTop,
+        Parent = nameRow,
     })
-    Intro.makeHollowPurple(sideLogoHost, 70, 53)
 
     local sideTitle = UI.new("TextLabel", {
-        AnchorPoint = Vector2.new(0.5, 0),
-        Position = UDim2.new(0.5, 0, 0, 100),
-        Size = UDim2.new(1, 0, 0, 24),
+        Position = UDim2.new(0, 20, 0, 0),
+        Size = UDim2.new(1, -20, 0, 24),
         BackgroundTransparency = 1,
         Font = Theme.FontBold,
         TextSize = 20,
         TextColor3 = Theme.AccentGlow,
+        TextXAlignment = Enum.TextXAlignment.Left,
         Text = "Snowy Hub",
         ZIndex = 53,
-        Parent = sideTop,
+        Parent = nameRow,
     })
-    UI.gradient(sideTitle, ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Theme.Accent),
-        ColorSequenceKeypoint.new(0.5, Theme.AccentGlow),
-        ColorSequenceKeypoint.new(1, Theme.Accent),
-    }, 0)
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Theme.AccentGlow),
+            ColorSequenceKeypoint.new(1, Theme.Accent),
+        },
+        Rotation = 0,
+        Parent = sideTitle,
+    })
 
-    local sideKanji = UI.new("TextLabel", {
-        AnchorPoint = Vector2.new(0.5, 0),
-        Position = UDim2.new(0.5, 0, 0, 128),
-        Size = UDim2.new(1, 0, 0, 18),
+    UI.new("TextLabel", {
+        Position = UDim2.new(0, 20, 0, 24),
+        Size = UDim2.new(1, -20, 0, 16),
         BackgroundTransparency = 1,
         Font = Theme.FontReg,
-        TextSize = 12,
+        TextSize = 11,
         TextColor3 = Theme.TextDim,
-        Text = "雪 云 枢 纽",
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Text = "雪  云  枢  纽",
         ZIndex = 53,
-        Parent = sideTop,
+        Parent = nameRow,
     })
 
-    -- sidebar tabs
+    -- sidebar tabs (Home with left accent bar)
     local tabsHolder = UI.new("Frame", {
-        Position = UDim2.new(0, 0, 0, 170),
-        Size = UDim2.new(1, 0, 1, -230),
+        Position = UDim2.new(0, 0, 0, 206),
+        Size = UDim2.new(1, 0, 1, -274),
         BackgroundTransparency = 1,
         ZIndex = 52,
         Parent = sidebar,
     })
-    UI.pad(tabsHolder, 0, 12, 0, 12)
+    UI.pad(tabsHolder, 4, 10, 4, 0)
     UI.list(tabsHolder, Enum.FillDirection.Vertical, 4)
+
+    -- Home tab row
+    local homeTab = UI.new("Frame", {
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundTransparency = 1,
+        ZIndex = 53,
+        Parent = tabsHolder,
+    })
+    UI.new("Frame", {
+        Position = UDim2.new(0, 0, 0.5, -8),
+        Size = UDim2.new(0, 3, 0, 16),
+        BackgroundColor3 = Theme.Accent,
+        BorderSizePixel = 0,
+        ZIndex = 54,
+        Parent = homeTab,
+    })
+    UI.new("TextLabel", {
+        Position = UDim2.new(0, 14, 0, 0),
+        Size = UDim2.new(1, -14, 1, 0),
+        BackgroundTransparency = 1,
+        Font = Theme.FontBold,
+        TextSize = 13,
+        TextColor3 = Theme.Text,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Text = "Home",
+        ZIndex = 54,
+        Parent = homeTab,
+    })
 
     -- user card at bottom
     local userCard = UI.new("Frame", {
@@ -1638,6 +1723,101 @@ function Widgets.input(parent, label, placeholder, onSubmit)
     return box
 end
 
+function Widgets.colorPicker(parent, label, default, onChange)
+    local palette = {
+        Color3.fromRGB(255,255,255), Color3.fromRGB(210,210,210), Color3.fromRGB(170,170,170),
+        Color3.fromRGB(130,130,130), Color3.fromRGB(90,90,90),   Color3.fromRGB(60,60,60),
+        Color3.fromRGB(35,35,35),    Color3.fromRGB(15,15,15),
+        Color3.fromRGB(255,60,60),   Color3.fromRGB(255,140,60), Color3.fromRGB(255,210,60),
+        Color3.fromRGB(170,255,60),  Color3.fromRGB(60,240,120), Color3.fromRGB(60,220,220),
+        Color3.fromRGB(60,140,255),  Color3.fromRGB(90,70,255),
+        Color3.fromRGB(170,100,255), Color3.fromRGB(255,60,240), Color3.fromRGB(255,90,150),
+        Color3.fromRGB(200,120,60),  Color3.fromRGB(130,200,80), Color3.fromRGB(70,180,140),
+        Color3.fromRGB(80,120,200),  Color3.fromRGB(140,100,200),
+        Color3.fromRGB(80,255,255),  Color3.fromRGB(140,170,255), Color3.fromRGB(170,120,255),
+        Color3.fromRGB(255,130,230),
+    }
+
+    local f = UI.new("Frame", {
+        Size = UDim2.new(1, 0, 0, 150),
+        BackgroundColor3 = Theme.Panel2,
+        BorderSizePixel = 0,
+        ZIndex = 55,
+        Parent = parent,
+    })
+    UI.corner(f, 8)
+    UI.pad(f, 10, 12, 10, 12)
+
+    local header = UI.new("Frame", {
+        Size = UDim2.new(1, 0, 0, 22),
+        BackgroundTransparency = 1,
+        ZIndex = 56,
+        Parent = f,
+    })
+    UI.new("TextLabel", {
+        Size = UDim2.new(1, -80, 1, 0),
+        BackgroundTransparency = 1,
+        Font = Theme.FontBold,
+        TextSize = 13,
+        TextColor3 = Theme.Text,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Text = label,
+        ZIndex = 57,
+        Parent = header,
+    })
+    local swatch = UI.new("Frame", {
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, 0, 0.5, 0),
+        Size = UDim2.new(0, 64, 0, 16),
+        BackgroundColor3 = default,
+        BorderSizePixel = 0,
+        ZIndex = 57,
+        Parent = header,
+    })
+    UI.corner(swatch, 8)
+    UI.stroke(swatch, Theme.Border, 1, 0.3)
+
+    local grid = UI.new("Frame", {
+        Position = UDim2.new(0, 0, 0, 30),
+        Size = UDim2.new(1, 0, 1, -30),
+        BackgroundTransparency = 1,
+        ZIndex = 56,
+        Parent = f,
+    })
+    UI.new("UIGridLayout", {
+        CellSize = UDim2.new(0, 28, 0, 22),
+        CellPadding = UDim2.new(0, 6, 0, 6),
+        FillDirectionMaxCells = 7,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+        Parent = grid,
+    })
+
+    for i, c in ipairs(palette) do
+        local b = UI.new("TextButton", {
+            BackgroundColor3 = c,
+            BorderSizePixel = 0,
+            Text = "",
+            AutoButtonColor = false,
+            LayoutOrder = i,
+            ZIndex = 57,
+            Parent = grid,
+        })
+        UI.corner(b, 5)
+        b.MouseEnter:Connect(function() UI.stroke(b, Theme.AccentGlow, 2, 0) end)
+        b.MouseLeave:Connect(function()
+            local s = b:FindFirstChildOfClass("UIStroke")
+            if s then s:Destroy() end
+        end)
+        b.MouseButton1Click:Connect(function()
+            swatch.BackgroundColor3 = c
+            if onChange then onChange(c) end
+        end)
+    end
+
+    return function(c) swatch.BackgroundColor3 = c end
+end
+
 -- =====================================================================
 -- Player helpers
 -- =====================================================================
@@ -2164,6 +2344,10 @@ local function buildHub()
         function(v) Flags.ESPTeamCheck = v end)
     Widgets.slider(sESP, "Max Distance", 100, 5000, Flags.ESPMaxDistance, 0, "",
         function(v) Flags.ESPMaxDistance = v end)
+    Widgets.colorPicker(sESP, "Box Color (enemy)", Flags.ESPEnemyColor,
+        function(c) Flags.ESPEnemyColor = c end)
+    Widgets.colorPicker(sESP, "Box Color (team)", Flags.ESPColor,
+        function(c) Flags.ESPColor = c end)
 
     -- MOVEMENT section
     local sMov = Widgets.section(scroll, "Movement", "(server-replicated — detectable)")
