@@ -976,18 +976,35 @@ function Hub.build()
     })
 
     -- GOJO IMAGE: fills the whole banner as the backdrop
-    -- Swap GOJO_IMAGE at the top of the file for your uploaded Roblox decal
-    UI.new("ImageLabel", {
+    local gojoImg = UI.new("ImageLabel", {
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         Image = GOJO_IMAGE,
         ScaleType = Enum.ScaleType.Crop,
-        ImageTransparency = 0.1,
+        ImageTransparency = 0,
         ZIndex = 53,
         Parent = banner,
     })
+
+    -- try to preload the asset — if the rbxassetid:// URL doesn't resolve,
+    -- fall back to the legacy http://www.roblox.com/asset/?id= URL format,
+    -- which some clients render when rbxassetid fails
+    task.spawn(function()
+        pcall(function()
+            local cp = game:GetService("ContentProvider")
+            cp:PreloadAsync({ gojoImg })
+        end)
+        -- after preload, check if image is still unresolved and try the raw URL fallback
+        task.wait(0.5)
+        if gojoImg and gojoImg.Parent and gojoImg.IsLoaded == false then
+            local id = GOJO_IMAGE:match("%d+")
+            if id then
+                gojoImg.Image = "http://www.roblox.com/asset/?id=" .. id
+            end
+        end
+    end)
 
     -- dark purple gradient overlay on top of the image so the "Snowy Hub"
     -- text at the bottom stays readable (fades from clear at top to solid dark at bottom)
