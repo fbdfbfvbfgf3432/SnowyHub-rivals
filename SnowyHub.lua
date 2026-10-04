@@ -690,26 +690,48 @@ function Intro.build(onDone)
         Parent = credit,
     })
 
-    -- intro sound
-    -- intro sound: parent to SoundService so it survives screen:Destroy()
-    pcall(function()
-        local sound = Instance.new("Sound")
-        sound.Name = "SnowyIntroSound"
-        sound.SoundId = INTRO_SOUND_ID
-        sound.Volume = 2.5
-        sound.PlayOnRemove = false
-        sound.Parent = SoundService
-        -- preload then play so it doesn't start on an unloaded buffer
-        pcall(function()
-            local cp = game:GetService("ContentProvider")
-            cp:PreloadAsync({ sound })
+    -- intro sound — with debug + loaded-check + play retries
+    task.spawn(function()
+        local ok, err = pcall(function()
+            local sound = Instance.new("Sound")
+            sound.Name = "SnowyIntroSound"
+            sound.SoundId = INTRO_SOUND_ID
+            sound.Volume = 3
+            sound.PlayOnRemove = false
+            sound.Parent = SoundService
+            print("[SnowyHub] sound created:", INTRO_SOUND_ID)
+
+            -- preload
+            local pOk, pErr = pcall(function()
+                local cp = game:GetService("ContentProvider")
+                cp:PreloadAsync({ sound })
+            end)
+            print("[SnowyHub] preload ok:", pOk, pErr or "")
+            print("[SnowyHub] sound.IsLoaded:", sound.IsLoaded, "TimeLength:", sound.TimeLength)
+
+            if not sound.IsLoaded then
+                sound.Loaded:Wait()
+                print("[SnowyHub] loaded wait done, TimeLength:", sound.TimeLength)
+            end
+
+            if sound.TimeLength == 0 then
+                warn("[SnowyHub] sound has 0 length — asset likely isn't a sound or lacks play permission for this experience. Roblox blocks post-2023 audio without permission. Upload your own sound as 'Audio' at create.roblox.com/dashboard/creations/audio and set CUSTOM_SOUND_ID.")
+            end
+
+            sound:Play()
+            print("[SnowyHub] sound playing — IsPlaying:", sound.IsPlaying)
+
+            sound.Played:Connect(function() print("[SnowyHub] Played event fired") end)
+            sound.Ended:Connect(function()
+                print("[SnowyHub] sound ended")
+                pcall(function() sound:Destroy() end)
+            end)
+
+            task.delay(20, function()
+                if sound and sound.Parent then pcall(function() sound:Destroy() end) end
+            end)
         end)
-        sound:Play()
-        sound.Ended:Connect(function() pcall(function() sound:Destroy() end) end)
-        -- hard cleanup after 15s in case Ended never fires
-        task.delay(15, function()
-            if sound and sound.Parent then pcall(function() sound:Destroy() end) end
-        end)
+        if not ok then warn("[SnowyHub] sound setup err:", err) end
     end)
 
     print("[SnowyHub] intro built, starting bar fill")
