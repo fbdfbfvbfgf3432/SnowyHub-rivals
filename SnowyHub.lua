@@ -76,9 +76,15 @@ local Theme = {
 
 local HOLLOW_PURPLE_IMAGE = "rbxassetid://136481529993647"
 local INTRO_SOUND_ID      = "rbxassetid://104910706944537"
--- Wolf head logo for the hub (swap this ID if you have a different one you prefer)
-local WOLF_LOGO_IMAGE     = "rbxassetid://136481529993647"
-local LOGO_TINT           = Color3.fromRGB(190, 120, 255) -- purple tint applied to the logo
+-- =====================================================================
+-- SWAP THESE ASSET IDs with your own uploaded Roblox decals
+-- Create -> Decals -> Upload your Gojo image, then grab its asset ID
+-- and paste it below. Default IDs are placeholders that may render as
+-- a blank/blue blob — that's expected until you swap in a real decal.
+-- =====================================================================
+local GOJO_IMAGE          = "rbxassetid://136481529993647" -- SWAP ME
+local WOLF_LOGO_IMAGE     = "rbxassetid://136481529993647" -- SWAP ME
+local LOGO_TINT           = Color3.fromRGB(190, 120, 255)
 
 -- =====================================================================
 -- Root ScreenGui
@@ -969,150 +975,109 @@ function Hub.build()
         Parent = banner,
     })
 
-    -- soft purple glow behind the emblem
-    local logoGlow = UI.new("Frame", {
+    -- GOJO IMAGE: fills the whole banner as the backdrop
+    -- Swap GOJO_IMAGE at the top of the file for your uploaded Roblox decal
+    UI.new("ImageLabel", {
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0, 150, 0, 150),
-        BackgroundColor3 = Theme.Accent,
-        BackgroundTransparency = 0.8,
-        BorderSizePixel = 0,
-        ZIndex = 52,
-        Parent = banner,
-    })
-    UI.corner(logoGlow, 999)
-
-    -- outer hexagonal-feel diamond (rotated square with heavy stroke)
-    local diamondOuter = UI.new("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0, 80, 0, 80),
-        BackgroundColor3 = Color3.fromRGB(45, 22, 90),
-        BorderSizePixel = 0,
-        Rotation = 45,
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Image = GOJO_IMAGE,
+        ScaleType = Enum.ScaleType.Crop,
+        ImageTransparency = 0.1,
         ZIndex = 53,
         Parent = banner,
     })
-    UI.corner(diamondOuter, 14)
-    UI.stroke(diamondOuter, Theme.AccentGlow, 2, 0)
-    UI.new("UIGradient", {
-        Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(90, 50, 170)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 14, 60)),
-        },
-        Rotation = 90,
-        Parent = diamondOuter,
-    })
 
-    -- inner smaller diamond (second ring effect)
-    local diamondInner = UI.new("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0, 56, 0, 56),
-        BackgroundTransparency = 1,
+    -- dark purple gradient overlay on top of the image so the "Snowy Hub"
+    -- text at the bottom stays readable (fades from clear at top to solid dark at bottom)
+    local overlay = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 1),
+        Position = UDim2.new(0.5, 0, 1, 0),
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(15, 8, 30),
         BorderSizePixel = 0,
-        Rotation = 45,
         ZIndex = 54,
         Parent = banner,
     })
-    UI.corner(diamondInner, 8)
-    UI.stroke(diamondInner, Theme.Accent, 1, 0.3)
-
-    -- big "S" monogram inside — parented to banner (not rotated diamond) so text stays upright
-    local monogram = UI.new("TextLabel", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, -2),
-        Size = UDim2.new(0, 70, 0, 70),
-        BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBlack,
-        TextSize = 48,
-        TextColor3 = Theme.AccentGlow,
-        Text = "S",
-        ZIndex = 55,
-        Parent = banner,
-    })
     UI.new("UIGradient", {
-        Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 220, 255)),
-            ColorSequenceKeypoint.new(1, Theme.Accent),
+        Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.55, 0.5),
+            NumberSequenceKeypoint.new(1, 0.1),
         },
         Rotation = 90,
-        Parent = monogram,
+        Parent = overlay,
     })
 
-    -- tiny caption under the monogram inside the banner
-    UI.new("TextLabel", {
-        AnchorPoint = Vector2.new(0.5, 1),
-        Position = UDim2.new(0.5, 0, 1, -8),
-        Size = UDim2.new(0, 100, 0, 12),
+    -- small circular glyph + name sitting at the bottom of the banner (like image 19)
+    local bannerBottom = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0, 1),
+        Position = UDim2.new(0, 14, 1, -10),
+        Size = UDim2.new(1, -28, 0, 44),
         BackgroundTransparency = 1,
-        Font = Enum.Font.Code,
-        TextSize = 9,
-        TextColor3 = Theme.TextDim,
-        Text = "SNOWY · HUB",
         ZIndex = 55,
         Parent = banner,
     })
 
-    -- "Snowy Hub" wordmark + Chinese below the banner
-    local nameRow = UI.new("Frame", {
-        Position = UDim2.new(0, 0, 0, 148),
-        Size = UDim2.new(1, 0, 0, 48),
-        BackgroundTransparency = 1,
-        ZIndex = 52,
-        Parent = sidebar,
-    })
-    UI.pad(nameRow, 0, 14, 0, 14)
-
-    local diamond = UI.new("Frame", {
+    -- small purple orb next to the name
+    local nameOrb = UI.new("Frame", {
         AnchorPoint = Vector2.new(0, 0.5),
-        Position = UDim2.new(0, 0, 0.5, -4),
-        Size = UDim2.new(0, 10, 0, 10),
+        Position = UDim2.new(0, 0, 0.5, 0),
+        Size = UDim2.new(0, 20, 0, 20),
         BackgroundColor3 = Theme.Accent,
         BorderSizePixel = 0,
-        Rotation = 45,
-        ZIndex = 53,
-        Parent = nameRow,
+        ZIndex = 56,
+        Parent = bannerBottom,
     })
+    UI.corner(nameOrb, 999)
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(220, 180, 255)),
+            ColorSequenceKeypoint.new(1, Theme.AccentDeep),
+        },
+        Rotation = 90,
+        Parent = nameOrb,
+    })
+    UI.stroke(nameOrb, Theme.AccentGlow, 1, 0.2)
 
-    local sideTitle = UI.new("TextLabel", {
-        Position = UDim2.new(0, 20, 0, 0),
-        Size = UDim2.new(1, -20, 0, 24),
+    local bannerName = UI.new("TextLabel", {
+        Position = UDim2.new(0, 30, 0, 0),
+        Size = UDim2.new(1, -30, 0, 24),
         BackgroundTransparency = 1,
-        Font = Theme.FontBold,
-        TextSize = 20,
-        TextColor3 = Theme.AccentGlow,
+        Font = Enum.Font.GothamBold,
+        TextSize = 18,
+        TextColor3 = Theme.Text,
         TextXAlignment = Enum.TextXAlignment.Left,
         Text = "Snowy Hub",
-        ZIndex = 53,
-        Parent = nameRow,
+        ZIndex = 56,
+        Parent = bannerBottom,
     })
     UI.new("UIGradient", {
         Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Theme.AccentGlow),
-            ColorSequenceKeypoint.new(1, Theme.Accent),
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 240, 255)),
+            ColorSequenceKeypoint.new(1, Theme.AccentGlow),
         },
         Rotation = 0,
-        Parent = sideTitle,
+        Parent = bannerName,
     })
-
     UI.new("TextLabel", {
-        Position = UDim2.new(0, 20, 0, 24),
-        Size = UDim2.new(1, -20, 0, 16),
+        Position = UDim2.new(0, 30, 0, 24),
+        Size = UDim2.new(1, -30, 0, 14),
         BackgroundTransparency = 1,
-        Font = Theme.FontReg,
+        Font = Enum.Font.Code,
         TextSize = 11,
         TextColor3 = Theme.TextDim,
         TextXAlignment = Enum.TextXAlignment.Left,
-        Text = "雪  云  枢  纽",
-        ZIndex = 53,
-        Parent = nameRow,
+        Text = "雪 云 枢 纽",
+        ZIndex = 56,
+        Parent = bannerBottom,
     })
 
-    -- sidebar tabs (Home with left accent bar)
+    -- sidebar tabs (Home with left accent bar) — tabs start right after the banner now
     local tabsHolder = UI.new("Frame", {
-        Position = UDim2.new(0, 0, 0, 206),
-        Size = UDim2.new(1, 0, 1, -274),
+        Position = UDim2.new(0, 0, 0, 156),
+        Size = UDim2.new(1, 0, 1, -224),
         BackgroundTransparency = 1,
         ZIndex = 52,
         Parent = sidebar,
