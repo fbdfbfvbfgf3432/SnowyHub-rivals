@@ -74,17 +74,25 @@ local Theme = {
     FontMono       = Enum.Font.Code,
 }
 
+-- =====================================================================
+-- CUSTOM IMAGE SLOTS — paste your own Roblox asset IDs here
+-- =====================================================================
+-- HOW TO USE YOUR OWN IMAGE:
+--   1. Save the image you want (wolf, gojo, anything) to your computer
+--   2. Go to https://create.roblox.com/dashboard/creations/decals
+--   3. Click "Upload Asset", pick your file, wait ~30s for moderation
+--   4. Click the uploaded decal, the URL ends in /decals/XXXXXXXXXX
+--   5. Replace the number below with your XXXXXXXXXX
+--   6. Re-run the loadstring, your image appears
+--
+-- Leave the ID empty ("") to fall back to the emoji glyph instead.
+-- =====================================================================
+local CUSTOM_LOGO_ID      = ""   -- <<<< PASTE YOUR DECAL ID HERE (just the number)
+local CUSTOM_BANNER_ID    = ""   -- <<<< PASTE YOUR BANNER DECAL ID HERE
+local LOGO_TINT           = Color3.fromRGB(255, 255, 255) -- white = show image's own colors; purple = tint it
+
 local HOLLOW_PURPLE_IMAGE = "rbxassetid://136481529993647"
 local INTRO_SOUND_ID      = "rbxassetid://104910706944537"
--- =====================================================================
--- SWAP THESE ASSET IDs with your own uploaded Roblox decals
--- Create -> Decals -> Upload your Gojo image, then grab its asset ID
--- and paste it below. Default IDs are placeholders that may render as
--- a blank/blue blob — that's expected until you swap in a real decal.
--- =====================================================================
-local GOJO_IMAGE          = "rbxassetid://136481529993647" -- SWAP ME
-local WOLF_LOGO_IMAGE     = "rbxassetid://136481529993647" -- SWAP ME
-local LOGO_TINT           = Color3.fromRGB(190, 120, 255)
 
 -- =====================================================================
 -- Root ScreenGui
@@ -252,14 +260,15 @@ end
 -- =====================================================================
 local Intro = {}
 
--- Wolf head as a text glyph (🐺 emoji) — scales freely, no asset needed,
--- renders as a real wolf face anywhere Roblox supports emoji (modern clients).
+-- Logo: uses CUSTOM_LOGO_ID if set, otherwise falls back to wolf emoji glyph.
+-- Add soft neon halo + optional pulse animation around whichever is used.
 function Intro.makeWolf(parent, size, opts)
     opts = opts or {}
     local line     = opts.line   or Color3.fromRGB(210, 160, 255)
     local showHalo = opts.halo ~= false
     local animate  = opts.animate ~= false
     local zbase    = opts.z or 100
+    local customId = opts.imageId or CUSTOM_LOGO_ID
 
     local wrap = UI.new("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5),
@@ -293,20 +302,38 @@ function Intro.makeWolf(parent, size, opts)
         })
     end
 
-    -- wolf glyph (color emoji rendered by Roblox)
-    local wolfGlyph = UI.new("TextLabel", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBlack,
-        TextSize = size * 0.85,
-        TextColor3 = line,
-        Text = "🐺",
-        TextScaled = false,
-        ZIndex = zbase + 2,
-        Parent = wrap,
-    })
+    -- If user supplied a custom decal ID, use it as an ImageLabel.
+    -- Otherwise fall back to the wolf emoji glyph.
+    if customId and customId ~= "" then
+        local idStr = tostring(customId)
+        -- strip "rbxassetid://" prefix if user pasted the full URL
+        idStr = idStr:gsub("rbxassetid://", "")
+        UI.new("ImageLabel", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(0.95, 0, 0.95, 0),
+            BackgroundTransparency = 1,
+            Image = "rbxassetid://" .. idStr,
+            ScaleType = Enum.ScaleType.Fit,
+            ImageColor3 = LOGO_TINT,
+            ZIndex = zbase + 2,
+            Parent = wrap,
+        })
+    else
+        UI.new("TextLabel", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundTransparency = 1,
+            Font = Enum.Font.GothamBlack,
+            TextSize = size * 0.85,
+            TextColor3 = line,
+            Text = "🐺",
+            TextScaled = false,
+            ZIndex = zbase + 2,
+            Parent = wrap,
+        })
+    end
 
     -- animate halo pulse
     if animate and halo then
@@ -1030,16 +1057,51 @@ function Hub.build()
         Parent = banner,
     })
 
-    -- big neon wolf head centered in the banner (procedural, no asset)
-    local bannerWolfSlot = UI.new("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.42, 0),
-        Size = UDim2.new(0, 90, 0, 90),
-        BackgroundTransparency = 1,
-        ZIndex = 53,
-        Parent = banner,
-    })
-    Intro.makeWolf(bannerWolfSlot, 90, { z = 53, animate = false })
+    -- banner backdrop: if CUSTOM_BANNER_ID is set, fill the whole banner with it;
+    -- otherwise show a centered logo (wolf emoji or CUSTOM_LOGO_ID)
+    if CUSTOM_BANNER_ID and CUSTOM_BANNER_ID ~= "" then
+        local idStr = tostring(CUSTOM_BANNER_ID):gsub("rbxassetid://", "")
+        UI.new("ImageLabel", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundTransparency = 1,
+            Image = "rbxassetid://" .. idStr,
+            ScaleType = Enum.ScaleType.Crop,
+            ZIndex = 53,
+            Parent = banner,
+        })
+        -- dark gradient overlay for text readability
+        local overlay = UI.new("Frame", {
+            AnchorPoint = Vector2.new(0.5, 1),
+            Position = UDim2.new(0.5, 0, 1, 0),
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundColor3 = Color3.fromRGB(15, 8, 30),
+            BorderSizePixel = 0,
+            ZIndex = 54,
+            Parent = banner,
+        })
+        UI.new("UIGradient", {
+            Transparency = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 1),
+                NumberSequenceKeypoint.new(0.55, 0.5),
+                NumberSequenceKeypoint.new(1, 0.1),
+            },
+            Rotation = 90,
+            Parent = overlay,
+        })
+    else
+        -- no banner image set — show centered logo (wolf emoji or CUSTOM_LOGO_ID)
+        local bannerLogoSlot = UI.new("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.42, 0),
+            Size = UDim2.new(0, 90, 0, 90),
+            BackgroundTransparency = 1,
+            ZIndex = 53,
+            Parent = banner,
+        })
+        Intro.makeWolf(bannerLogoSlot, 90, { z = 53, animate = false })
+    end
 
     -- small circular glyph + name sitting at the bottom of the banner
     local bannerBottom = UI.new("Frame", {
