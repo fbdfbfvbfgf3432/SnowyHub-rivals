@@ -252,17 +252,14 @@ end
 -- =====================================================================
 local Intro = {}
 
--- Build a neon-purple wolf head from pure Frames (no asset dependency).
--- Returns the wrapping Frame so caller can tween/position it.
+-- Wolf head as a text glyph (🐺 emoji) — scales freely, no asset needed,
+-- renders as a real wolf face anywhere Roblox supports emoji (modern clients).
 function Intro.makeWolf(parent, size, opts)
     opts = opts or {}
-    local fill   = opts.fill   or Color3.fromRGB(45, 20, 90)
-    local line   = opts.line   or Color3.fromRGB(210, 160, 255)
-    local eye    = opts.eye    or Color3.fromRGB(240, 220, 255)
+    local line     = opts.line   or Color3.fromRGB(210, 160, 255)
     local showHalo = opts.halo ~= false
     local animate  = opts.animate ~= false
-    local zbase = opts.z or 100
-    local strokeW = opts.strokeWidth or math.max(1, math.floor(size / 50))
+    local zbase    = opts.z or 100
 
     local wrap = UI.new("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5),
@@ -279,114 +276,47 @@ function Intro.makeWolf(parent, size, opts)
         halo = UI.new("Frame", {
             AnchorPoint = Vector2.new(0.5, 0.5),
             Position = UDim2.new(0.5, 0, 0.5, 0),
-            Size = UDim2.new(1.5, 0, 1.5, 0),
+            Size = UDim2.new(1.4, 0, 1.4, 0),
             BackgroundColor3 = line,
-            BackgroundTransparency = 0.78,
+            BackgroundTransparency = 0.75,
             BorderSizePixel = 0,
             ZIndex = zbase,
             Parent = wrap,
         })
         UI.corner(halo, 999)
-    end
-
-    -- ears (two angled rounded rectangles tapered to a point via gradient)
-    local ears = {}
-    for _, side in ipairs({-1, 1}) do
-        local ear = UI.new("Frame", {
-            AnchorPoint = Vector2.new(0.5, 1),
-            Position = UDim2.new(0.5 + side * 0.26, 0, 0.44, 0),
-            Size = UDim2.new(0, size * 0.2, 0, size * 0.38),
-            BackgroundColor3 = fill,
-            BorderSizePixel = 0,
-            Rotation = side * 18,
-            ZIndex = zbase + 1,
-            Parent = wrap,
-        })
-        UI.corner(ear, 4)
-        UI.stroke(ear, line, strokeW, 0)
         UI.new("UIGradient", {
             Transparency = NumberSequence.new{
-                NumberSequenceKeypoint.new(0, 0.6),
-                NumberSequenceKeypoint.new(0.5, 0.3),
-                NumberSequenceKeypoint.new(1, 0),
+                NumberSequenceKeypoint.new(0, 0.5),
+                NumberSequenceKeypoint.new(1, 1),
             },
-            Rotation = 90,
-            Parent = ear,
+            Parent = halo,
         })
-        table.insert(ears, ear)
     end
 
-    -- head body (hexagonal feel via rounded square)
-    local head = UI.new("Frame", {
+    -- wolf glyph (color emoji rendered by Roblox)
+    local wolfGlyph = UI.new("TextLabel", {
         AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.56, 0),
-        Size = UDim2.new(0, size * 0.72, 0, size * 0.62),
-        BackgroundColor3 = fill,
-        BorderSizePixel = 0,
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBlack,
+        TextSize = size * 0.85,
+        TextColor3 = line,
+        Text = "🐺",
+        TextScaled = false,
         ZIndex = zbase + 2,
         Parent = wrap,
     })
-    UI.corner(head, 12)
-    UI.stroke(head, line, strokeW, 0)
-    UI.new("UIGradient", {
-        Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 40, 140)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 10, 55)),
-        },
-        Rotation = 90,
-        Parent = head,
-    })
 
-    -- snout (smaller rounded rect at bottom)
-    local snout = UI.new("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0),
-        Position = UDim2.new(0.5, 0, 0.7, 0),
-        Size = UDim2.new(0, size * 0.34, 0, size * 0.22),
-        BackgroundColor3 = fill,
-        BorderSizePixel = 0,
-        ZIndex = zbase + 3,
-        Parent = wrap,
-    })
-    UI.corner(snout, 8)
-    UI.stroke(snout, line, strokeW, 0)
-
-    -- eyes (bright glowing dots)
-    for _, side in ipairs({-1, 1}) do
-        local eyeDot = UI.new("Frame", {
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            Position = UDim2.new(0.5 + side * 0.15, 0, 0.52, 0),
-            Size = UDim2.new(0, size * 0.09, 0, size * 0.09),
-            BackgroundColor3 = eye,
-            BorderSizePixel = 0,
-            ZIndex = zbase + 4,
-            Parent = wrap,
-        })
-        UI.corner(eyeDot, 999)
-    end
-
-    -- nose (dark triangle-ish dot at the tip of the snout)
-    local nose = UI.new("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.82, 0),
-        Size = UDim2.new(0, size * 0.09, 0, size * 0.06),
-        BackgroundColor3 = Color3.fromRGB(15, 8, 25),
-        BorderSizePixel = 0,
-        ZIndex = zbase + 5,
-        Parent = wrap,
-    })
-    UI.corner(nose, 999)
-
-    -- animate: pulsing halo + eye flicker
-    if animate then
+    -- animate halo pulse
+    if animate and halo then
         task.spawn(function()
             local t = 0
             while wrap.Parent do
                 local dt = RunService.RenderStepped:Wait()
                 t = t + dt
-                if halo and halo.Parent then
-                    halo.BackgroundTransparency = 0.72 + 0.1 * math.sin(t * 2.5)
-                    halo.Size = UDim2.new(1.5 + 0.08 * math.sin(t * 2), 0, 1.5 + 0.08 * math.sin(t * 2), 0)
-                end
+                halo.BackgroundTransparency = 0.7 + 0.1 * math.sin(t * 2.5)
+                halo.Size = UDim2.new(1.4 + 0.08 * math.sin(t * 2), 0, 1.4 + 0.08 * math.sin(t * 2), 0)
             end
         end)
     end
