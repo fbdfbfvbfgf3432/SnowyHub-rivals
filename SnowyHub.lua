@@ -1136,43 +1136,35 @@ function Hub.build()
         Parent = banner,
     })
 
-    -- mini wolf next to the name (replacing the purple orb)
-    local nameWolfSlot = UI.new("Frame", {
+    -- animated purple orb with blue orbit ring (matches reference banner layout)
+    local nameOrbSlot = UI.new("Frame", {
         AnchorPoint = Vector2.new(0, 0.5),
         Position = UDim2.new(0, 0, 0.5, 0),
-        Size = UDim2.new(0, 22, 0, 22),
+        Size = UDim2.new(0, 32, 0, 32),
         BackgroundTransparency = 1,
         ZIndex = 56,
         Parent = bannerBottom,
     })
-    Intro.makeWolf(nameWolfSlot, 22, { z = 56, animate = false, halo = false, strokeWidth = 1 })
+    Intro.makeHollowPurple(nameOrbSlot, 24, 56)
 
     local bannerName = UI.new("TextLabel", {
-        Position = UDim2.new(0, 30, 0, 0),
-        Size = UDim2.new(1, -30, 0, 24),
+        Position = UDim2.new(0, 40, 0, 2),
+        Size = UDim2.new(1, -40, 0, 22),
         BackgroundTransparency = 1,
         Font = Enum.Font.GothamBold,
-        TextSize = 18,
+        TextSize = 20,
         TextColor3 = Theme.Text,
         TextXAlignment = Enum.TextXAlignment.Left,
-        Text = "Snowy Hub",
+        Text = "SNOWY HUB",
         ZIndex = 56,
         Parent = bannerBottom,
     })
-    UI.new("UIGradient", {
-        Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 240, 255)),
-            ColorSequenceKeypoint.new(1, Theme.AccentGlow),
-        },
-        Rotation = 0,
-        Parent = bannerName,
-    })
     UI.new("TextLabel", {
-        Position = UDim2.new(0, 30, 0, 24),
-        Size = UDim2.new(1, -30, 0, 14),
+        Position = UDim2.new(0, 40, 0, 24),
+        Size = UDim2.new(1, -40, 0, 14),
         BackgroundTransparency = 1,
-        Font = Enum.Font.Code,
-        TextSize = 11,
+        Font = Enum.Font.GothamBold,
+        TextSize = 12,
         TextColor3 = Theme.TextDim,
         TextXAlignment = Enum.TextXAlignment.Left,
         Text = "雪 云 枢 纽",
