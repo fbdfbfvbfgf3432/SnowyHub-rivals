@@ -1,10 +1,14 @@
 -- =====================================================================
--- Snowy Hub v1.1 — Rivals (Roblox)
+-- Snowy Hub v1.2 — Rivals (Roblox)
 -- Made By Crscx
 -- Entry point: loadstring(game:HttpGet("<raw url>"))()
 -- Target client only. Visual + input helpers. Educational.
 -- =====================================================================
--- Build tag: custom-asset-pipeline-live  (bump this to bust CDN cache)
+-- Build tag: v1.2-script-loaded-check  (bump this to bust CDN cache)
+
+print("================================")
+print("[SnowyHub] SCRIPT STARTED LOADING")
+print("================================")
 
 if _G.SnowyHubRunning then
     pcall(function() _G.SnowyHubRunning:Destroy() end)
