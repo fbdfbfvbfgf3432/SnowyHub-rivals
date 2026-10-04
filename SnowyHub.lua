@@ -321,19 +321,31 @@ function Intro.makeWolf(parent, size, opts)
             Parent = wrap,
         })
     else
-        UI.new("TextLabel", {
+        -- Fallback: bold purple kanji 狼 (wolf) with gradient — looks premium,
+        -- renders cleanly on every Roblox client, matches the CJK branding.
+        local kanji = UI.new("TextLabel", {
             AnchorPoint = Vector2.new(0.5, 0.5),
             Position = UDim2.new(0.5, 0, 0.5, 0),
             Size = UDim2.new(1, 0, 1, 0),
             BackgroundTransparency = 1,
             Font = Enum.Font.GothamBlack,
-            TextSize = size * 0.85,
+            TextSize = size * 0.95,
             TextColor3 = line,
-            Text = "🐺",
+            Text = "狼",
             TextScaled = false,
             ZIndex = zbase + 2,
             Parent = wrap,
         })
+        UI.new("UIGradient", {
+            Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(240, 200, 255)),
+                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(190, 110, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 50, 180)),
+            },
+            Rotation = 90,
+            Parent = kanji,
+        })
+        UI.stroke(kanji, Color3.fromRGB(255, 220, 255), 1, 0.3)
     end
 
     -- animate halo pulse
@@ -690,48 +702,20 @@ function Intro.build(onDone)
         Parent = credit,
     })
 
-    -- intro sound — with debug + loaded-check + play retries
+    -- intro sound — non-blocking, no yield that can hang the thread
     task.spawn(function()
-        local ok, err = pcall(function()
+        pcall(function()
             local sound = Instance.new("Sound")
             sound.Name = "SnowyIntroSound"
             sound.SoundId = INTRO_SOUND_ID
             sound.Volume = 3
             sound.PlayOnRemove = false
             sound.Parent = SoundService
-            print("[SnowyHub] sound created:", INTRO_SOUND_ID)
-
-            -- preload
-            local pOk, pErr = pcall(function()
-                local cp = game:GetService("ContentProvider")
-                cp:PreloadAsync({ sound })
-            end)
-            print("[SnowyHub] preload ok:", pOk, pErr or "")
-            print("[SnowyHub] sound.IsLoaded:", sound.IsLoaded, "TimeLength:", sound.TimeLength)
-
-            if not sound.IsLoaded then
-                sound.Loaded:Wait()
-                print("[SnowyHub] loaded wait done, TimeLength:", sound.TimeLength)
-            end
-
-            if sound.TimeLength == 0 then
-                warn("[SnowyHub] sound has 0 length — asset likely isn't a sound or lacks play permission for this experience. Roblox blocks post-2023 audio without permission. Upload your own sound as 'Audio' at create.roblox.com/dashboard/creations/audio and set CUSTOM_SOUND_ID.")
-            end
-
             sound:Play()
-            print("[SnowyHub] sound playing — IsPlaying:", sound.IsPlaying)
-
-            sound.Played:Connect(function() print("[SnowyHub] Played event fired") end)
-            sound.Ended:Connect(function()
-                print("[SnowyHub] sound ended")
-                pcall(function() sound:Destroy() end)
-            end)
-
             task.delay(20, function()
                 if sound and sound.Parent then pcall(function() sound:Destroy() end) end
             end)
         end)
-        if not ok then warn("[SnowyHub] sound setup err:", err) end
     end)
 
     print("[SnowyHub] intro built, starting bar fill")
