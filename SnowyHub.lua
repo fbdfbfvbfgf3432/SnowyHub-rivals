@@ -1,9 +1,10 @@
 -- =====================================================================
--- Snowy Hub v1.0 — Rivals (Roblox)
+-- Snowy Hub v1.1 — Rivals (Roblox)
 -- Made By Crscx
 -- Entry point: loadstring(game:HttpGet("<raw url>"))()
 -- Target client only. Visual + input helpers. Educational.
 -- =====================================================================
+-- Build tag: custom-asset-pipeline-live  (bump this to bust CDN cache)
 
 if _G.SnowyHubRunning then
     pcall(function() _G.SnowyHubRunning:Destroy() end)
@@ -2675,7 +2676,7 @@ safe_call("ESP.init",      function() ESP.init() end)
 safe_call("Movement.init", function() Movement.init() end)
 safe_call("Hitbox.init",   function() Hitbox.init() end)
 
-print("[SnowyHub] boot — v1.1, commit pending")
+print("[SnowyHub] boot — v1.1 custom-asset-pipeline, logo="..tostring(CUSTOM_LOGO_ID)..", banner="..tostring(CUSTOM_BANNER_ID))
 
 local hubShown = false
 local function showHub()
