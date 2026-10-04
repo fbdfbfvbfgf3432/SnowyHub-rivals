@@ -837,14 +837,30 @@ function Hub.build()
         Parent = topbar,
     })
 
-    UI.new("ImageLabel", {
+    -- small diamond emblem on the top pill
+    local pillLogoHost = UI.new("Frame", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(0, 22, 0, 22),
-        Image = WOLF_LOGO_IMAGE,
-        ImageColor3 = LOGO_TINT,
-        ScaleType = Enum.ScaleType.Fit,
+        Size = UDim2.new(0, 20, 0, 20),
         LayoutOrder = 1,
         Parent = topbar,
+    })
+    local pillDiamond = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 12, 0, 12),
+        BackgroundColor3 = Theme.Accent,
+        BorderSizePixel = 0,
+        Rotation = 45,
+        Parent = pillLogoHost,
+    })
+    UI.corner(pillDiamond, 3)
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Theme.AccentGlow),
+            ColorSequenceKeypoint.new(1, Theme.AccentDeep),
+        },
+        Rotation = 90,
+        Parent = pillDiamond,
     })
     local tTitle = UI.new("TextLabel", {
         BackgroundTransparency = 1,
@@ -953,29 +969,88 @@ function Hub.build()
         Parent = banner,
     })
 
-    -- soft purple glow behind the logo (static, no animation)
+    -- soft purple glow behind the emblem
     local logoGlow = UI.new("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
         Size = UDim2.new(0, 150, 0, 150),
         BackgroundColor3 = Theme.Accent,
-        BackgroundTransparency = 0.85,
+        BackgroundTransparency = 0.8,
         BorderSizePixel = 0,
         ZIndex = 52,
         Parent = banner,
     })
     UI.corner(logoGlow, 999)
 
-    -- static wolf logo centered in banner, purple tinted
-    UI.new("ImageLabel", {
+    -- outer hexagonal-feel diamond (rotated square with heavy stroke)
+    local diamondOuter = UI.new("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0, 108, 0, 108),
-        BackgroundTransparency = 1,
-        Image = WOLF_LOGO_IMAGE,
-        ImageColor3 = LOGO_TINT,
-        ScaleType = Enum.ScaleType.Fit,
+        Size = UDim2.new(0, 80, 0, 80),
+        BackgroundColor3 = Color3.fromRGB(45, 22, 90),
+        BorderSizePixel = 0,
+        Rotation = 45,
         ZIndex = 53,
+        Parent = banner,
+    })
+    UI.corner(diamondOuter, 14)
+    UI.stroke(diamondOuter, Theme.AccentGlow, 2, 0)
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(90, 50, 170)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 14, 60)),
+        },
+        Rotation = 90,
+        Parent = diamondOuter,
+    })
+
+    -- inner smaller diamond (second ring effect)
+    local diamondInner = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 56, 0, 56),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Rotation = 45,
+        ZIndex = 54,
+        Parent = banner,
+    })
+    UI.corner(diamondInner, 8)
+    UI.stroke(diamondInner, Theme.Accent, 1, 0.3)
+
+    -- big "S" monogram inside — parented to banner (not rotated diamond) so text stays upright
+    local monogram = UI.new("TextLabel", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, -2),
+        Size = UDim2.new(0, 70, 0, 70),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBlack,
+        TextSize = 48,
+        TextColor3 = Theme.AccentGlow,
+        Text = "S",
+        ZIndex = 55,
+        Parent = banner,
+    })
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 220, 255)),
+            ColorSequenceKeypoint.new(1, Theme.Accent),
+        },
+        Rotation = 90,
+        Parent = monogram,
+    })
+
+    -- tiny caption under the monogram inside the banner
+    UI.new("TextLabel", {
+        AnchorPoint = Vector2.new(0.5, 1),
+        Position = UDim2.new(0.5, 0, 1, -8),
+        Size = UDim2.new(0, 100, 0, 12),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Code,
+        TextSize = 9,
+        TextColor3 = Theme.TextDim,
+        Text = "SNOWY · HUB",
+        ZIndex = 55,
         Parent = banner,
     })
 
