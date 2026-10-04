@@ -87,8 +87,8 @@ local Theme = {
 --
 -- Leave the ID empty ("") to fall back to the emoji glyph instead.
 -- =====================================================================
-local CUSTOM_LOGO_ID      = ""   104398111865283
-local CUSTOM_BANNER_ID    = ""   92711086204941
+local CUSTOM_LOGO_ID      = "104398111865283"
+local CUSTOM_BANNER_ID    = "92711086204941"
 local LOGO_TINT           = Color3.fromRGB(255, 255, 255) -- white = show image's own colors; purple = tint it
 
 local HOLLOW_PURPLE_IMAGE = "rbxassetid://136481529993647"
