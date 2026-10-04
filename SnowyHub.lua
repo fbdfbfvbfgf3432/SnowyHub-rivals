@@ -252,6 +252,148 @@ end
 -- =====================================================================
 local Intro = {}
 
+-- Build a neon-purple wolf head from pure Frames (no asset dependency).
+-- Returns the wrapping Frame so caller can tween/position it.
+function Intro.makeWolf(parent, size, opts)
+    opts = opts or {}
+    local fill   = opts.fill   or Color3.fromRGB(45, 20, 90)
+    local line   = opts.line   or Color3.fromRGB(210, 160, 255)
+    local eye    = opts.eye    or Color3.fromRGB(240, 220, 255)
+    local showHalo = opts.halo ~= false
+    local animate  = opts.animate ~= false
+    local zbase = opts.z or 100
+    local strokeW = opts.strokeWidth or math.max(1, math.floor(size / 50))
+
+    local wrap = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, size, 0, size),
+        BackgroundTransparency = 1,
+        ZIndex = zbase,
+        Parent = parent,
+    })
+
+    -- outer soft neon halo
+    local halo
+    if showHalo then
+        halo = UI.new("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(1.5, 0, 1.5, 0),
+            BackgroundColor3 = line,
+            BackgroundTransparency = 0.78,
+            BorderSizePixel = 0,
+            ZIndex = zbase,
+            Parent = wrap,
+        })
+        UI.corner(halo, 999)
+    end
+
+    -- ears (two angled rounded rectangles tapered to a point via gradient)
+    local ears = {}
+    for _, side in ipairs({-1, 1}) do
+        local ear = UI.new("Frame", {
+            AnchorPoint = Vector2.new(0.5, 1),
+            Position = UDim2.new(0.5 + side * 0.26, 0, 0.44, 0),
+            Size = UDim2.new(0, size * 0.2, 0, size * 0.38),
+            BackgroundColor3 = fill,
+            BorderSizePixel = 0,
+            Rotation = side * 18,
+            ZIndex = zbase + 1,
+            Parent = wrap,
+        })
+        UI.corner(ear, 4)
+        UI.stroke(ear, line, strokeW, 0)
+        UI.new("UIGradient", {
+            Transparency = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 0.6),
+                NumberSequenceKeypoint.new(0.5, 0.3),
+                NumberSequenceKeypoint.new(1, 0),
+            },
+            Rotation = 90,
+            Parent = ear,
+        })
+        table.insert(ears, ear)
+    end
+
+    -- head body (hexagonal feel via rounded square)
+    local head = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.56, 0),
+        Size = UDim2.new(0, size * 0.72, 0, size * 0.62),
+        BackgroundColor3 = fill,
+        BorderSizePixel = 0,
+        ZIndex = zbase + 2,
+        Parent = wrap,
+    })
+    UI.corner(head, 12)
+    UI.stroke(head, line, strokeW, 0)
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 40, 140)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 10, 55)),
+        },
+        Rotation = 90,
+        Parent = head,
+    })
+
+    -- snout (smaller rounded rect at bottom)
+    local snout = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0),
+        Position = UDim2.new(0.5, 0, 0.7, 0),
+        Size = UDim2.new(0, size * 0.34, 0, size * 0.22),
+        BackgroundColor3 = fill,
+        BorderSizePixel = 0,
+        ZIndex = zbase + 3,
+        Parent = wrap,
+    })
+    UI.corner(snout, 8)
+    UI.stroke(snout, line, strokeW, 0)
+
+    -- eyes (bright glowing dots)
+    for _, side in ipairs({-1, 1}) do
+        local eyeDot = UI.new("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5 + side * 0.15, 0, 0.52, 0),
+            Size = UDim2.new(0, size * 0.09, 0, size * 0.09),
+            BackgroundColor3 = eye,
+            BorderSizePixel = 0,
+            ZIndex = zbase + 4,
+            Parent = wrap,
+        })
+        UI.corner(eyeDot, 999)
+    end
+
+    -- nose (dark triangle-ish dot at the tip of the snout)
+    local nose = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.82, 0),
+        Size = UDim2.new(0, size * 0.09, 0, size * 0.06),
+        BackgroundColor3 = Color3.fromRGB(15, 8, 25),
+        BorderSizePixel = 0,
+        ZIndex = zbase + 5,
+        Parent = wrap,
+    })
+    UI.corner(nose, 999)
+
+    -- animate: pulsing halo + eye flicker
+    if animate then
+        task.spawn(function()
+            local t = 0
+            while wrap.Parent do
+                local dt = RunService.RenderStepped:Wait()
+                t = t + dt
+                if halo and halo.Parent then
+                    halo.BackgroundTransparency = 0.72 + 0.1 * math.sin(t * 2.5)
+                    halo.Size = UDim2.new(1.5 + 0.08 * math.sin(t * 2), 0, 1.5 + 0.08 * math.sin(t * 2), 0)
+                end
+            end
+        end)
+    end
+
+    return wrap
+end
+
 -- Build a hollow-purple orb visual from pure Frames + gradients + strokes.
 -- Returns the wrapping Frame so caller can tween/position it.
 function Intro.makeHollowPurple(parent, size, zbase)
@@ -490,7 +632,7 @@ function Intro.build(onDone)
         ZIndex = 111,
         Parent = center,
     })
-    Intro.makeHollowPurple(orbSlot, 120, 111)
+    Intro.makeWolf(orbSlot, 140, { z = 111 })
 
     -- Chinese title: 雪 云 枢 纽 (snowy cloud hub)
     UI.new("TextLabel", {
@@ -734,7 +876,7 @@ function Intro.hollowPurpleReveal()
         ZIndex = 131,
         Parent = layer,
     })
-    Intro.makeHollowPurple(slot, 300, 132)
+    Intro.makeWolf(slot, 300, { z = 132 })
 
     -- grow in
     UI.tween(slot, 0.4, { Size = UDim2.new(0, 360, 0, 360) },
@@ -843,31 +985,14 @@ function Hub.build()
         Parent = topbar,
     })
 
-    -- small diamond emblem on the top pill
+    -- mini wolf head on the top pill
     local pillLogoHost = UI.new("Frame", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(0, 20, 0, 20),
+        Size = UDim2.new(0, 22, 0, 22),
         LayoutOrder = 1,
         Parent = topbar,
     })
-    local pillDiamond = UI.new("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0, 12, 0, 12),
-        BackgroundColor3 = Theme.Accent,
-        BorderSizePixel = 0,
-        Rotation = 45,
-        Parent = pillLogoHost,
-    })
-    UI.corner(pillDiamond, 3)
-    UI.new("UIGradient", {
-        Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Theme.AccentGlow),
-            ColorSequenceKeypoint.new(1, Theme.AccentDeep),
-        },
-        Rotation = 90,
-        Parent = pillDiamond,
-    })
+    Intro.makeWolf(pillLogoHost, 22, { z = 60, animate = false, halo = false, strokeWidth = 1 })
     local tTitle = UI.new("TextLabel", {
         BackgroundTransparency = 1,
         Size = UDim2.new(0, 90, 1, 0),
@@ -975,59 +1100,18 @@ function Hub.build()
         Parent = banner,
     })
 
-    -- GOJO IMAGE: fills the whole banner as the backdrop
-    local gojoImg = UI.new("ImageLabel", {
+    -- big neon wolf head centered in the banner (procedural, no asset)
+    local bannerWolfSlot = UI.new("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(1, 0, 1, 0),
+        Position = UDim2.new(0.5, 0, 0.42, 0),
+        Size = UDim2.new(0, 90, 0, 90),
         BackgroundTransparency = 1,
-        Image = GOJO_IMAGE,
-        ScaleType = Enum.ScaleType.Crop,
-        ImageTransparency = 0,
         ZIndex = 53,
         Parent = banner,
     })
+    Intro.makeWolf(bannerWolfSlot, 90, { z = 53, animate = false })
 
-    -- try to preload the asset — if the rbxassetid:// URL doesn't resolve,
-    -- fall back to the legacy http://www.roblox.com/asset/?id= URL format,
-    -- which some clients render when rbxassetid fails
-    task.spawn(function()
-        pcall(function()
-            local cp = game:GetService("ContentProvider")
-            cp:PreloadAsync({ gojoImg })
-        end)
-        -- after preload, check if image is still unresolved and try the raw URL fallback
-        task.wait(0.5)
-        if gojoImg and gojoImg.Parent and gojoImg.IsLoaded == false then
-            local id = GOJO_IMAGE:match("%d+")
-            if id then
-                gojoImg.Image = "http://www.roblox.com/asset/?id=" .. id
-            end
-        end
-    end)
-
-    -- dark purple gradient overlay on top of the image so the "Snowy Hub"
-    -- text at the bottom stays readable (fades from clear at top to solid dark at bottom)
-    local overlay = UI.new("Frame", {
-        AnchorPoint = Vector2.new(0.5, 1),
-        Position = UDim2.new(0.5, 0, 1, 0),
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundColor3 = Color3.fromRGB(15, 8, 30),
-        BorderSizePixel = 0,
-        ZIndex = 54,
-        Parent = banner,
-    })
-    UI.new("UIGradient", {
-        Transparency = NumberSequence.new{
-            NumberSequenceKeypoint.new(0, 1),
-            NumberSequenceKeypoint.new(0.55, 0.5),
-            NumberSequenceKeypoint.new(1, 0.1),
-        },
-        Rotation = 90,
-        Parent = overlay,
-    })
-
-    -- small circular glyph + name sitting at the bottom of the banner (like image 19)
+    -- small circular glyph + name sitting at the bottom of the banner
     local bannerBottom = UI.new("Frame", {
         AnchorPoint = Vector2.new(0, 1),
         Position = UDim2.new(0, 14, 1, -10),
@@ -1037,26 +1121,16 @@ function Hub.build()
         Parent = banner,
     })
 
-    -- small purple orb next to the name
-    local nameOrb = UI.new("Frame", {
+    -- mini wolf next to the name (replacing the purple orb)
+    local nameWolfSlot = UI.new("Frame", {
         AnchorPoint = Vector2.new(0, 0.5),
         Position = UDim2.new(0, 0, 0.5, 0),
-        Size = UDim2.new(0, 20, 0, 20),
-        BackgroundColor3 = Theme.Accent,
-        BorderSizePixel = 0,
+        Size = UDim2.new(0, 22, 0, 22),
+        BackgroundTransparency = 1,
         ZIndex = 56,
         Parent = bannerBottom,
     })
-    UI.corner(nameOrb, 999)
-    UI.new("UIGradient", {
-        Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(220, 180, 255)),
-            ColorSequenceKeypoint.new(1, Theme.AccentDeep),
-        },
-        Rotation = 90,
-        Parent = nameOrb,
-    })
-    UI.stroke(nameOrb, Theme.AccentGlow, 1, 0.2)
+    Intro.makeWolf(nameWolfSlot, 22, { z = 56, animate = false, halo = false, strokeWidth = 1 })
 
     local bannerName = UI.new("TextLabel", {
         Position = UDim2.new(0, 30, 0, 0),
