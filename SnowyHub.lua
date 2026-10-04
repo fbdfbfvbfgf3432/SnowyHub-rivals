@@ -28,16 +28,28 @@ local function Camera() return Workspace.CurrentCamera end
 -- =====================================================================
 -- Executor compat
 -- =====================================================================
-local get_hidden = (typeof(gethui) == "function" and gethui)
-                or (typeof(get_hidden_gui) == "function" and get_hidden_gui)
-                or function() return CoreGui end
+local function safe_type(v) return type(v) end
+
+local function pick_hidden()
+    local ok, res
+    ok, res = pcall(function() if gethui then return gethui() end end)
+    if ok and res then return res end
+    ok, res = pcall(function() if get_hidden_gui then return get_hidden_gui() end end)
+    if ok and res then return res end
+    ok, res = pcall(function() return game:GetService("CoreGui") end)
+    if ok and res then return res end
+    return LocalPlayer:WaitForChild("PlayerGui")
+end
 
 local function parent_gui(g)
-    local ok = pcall(function()
+    local target = pick_hidden()
+    local ok1 = pcall(function()
         if syn and syn.protect_gui then syn.protect_gui(g) end
-        g.Parent = get_hidden()
     end)
-    if not ok then g.Parent = CoreGui end
+    local ok2 = pcall(function() g.Parent = target end)
+    if not ok2 then
+        pcall(function() g.Parent = LocalPlayer:WaitForChild("PlayerGui") end)
+    end
 end
 
 -- =====================================================================
@@ -1901,9 +1913,9 @@ function Hitbox.init()
     RunService.Heartbeat:Connect(function()
         if not Flags.HitboxEnabled then
             for part, _ in pairs(Hitbox.saved) do
-                if part.Parent then Hitbox.restore(part) end
+                if part and part.Parent then Hitbox.restore(part) end
+                Hitbox.saved[part] = nil
             end
-            table.clear(Hitbox.saved)
             return
         end
         for _, p in ipairs(Players:GetPlayers()) do
@@ -2209,13 +2221,24 @@ end)
 -- =====================================================================
 -- BOOT
 -- =====================================================================
-Aim.init()
-ESP.init()
-Movement.init()
-Hitbox.init()
+local function safe_call(name, fn)
+    local ok, err = pcall(fn)
+    if not ok then
+        warn("[SnowyHub] " .. name .. " failed: " .. tostring(err))
+    end
+end
 
-Intro.build(function()
-    buildHub()
-    notify("snowy hub", "loaded — right shift to hide", "good", 5)
-    notify("made by crscx", "aim · esp · movement · combat · skins", "", 6)
+safe_call("Aim.init",      function() Aim.init() end)
+safe_call("ESP.init",      function() ESP.init() end)
+safe_call("Movement.init", function() Movement.init() end)
+safe_call("Hitbox.init",   function() Hitbox.init() end)
+
+safe_call("Intro.build", function()
+    Intro.build(function()
+        safe_call("buildHub", function() buildHub() end)
+        pcall(function()
+            notify("snowy hub", "loaded — right shift to hide", "good", 5)
+            notify("made by crscx", "aim · esp · movement · combat · skins", "", 6)
+        end)
+    end)
 end)
