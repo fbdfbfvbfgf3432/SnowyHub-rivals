@@ -591,7 +591,9 @@ function Intro.build(onDone)
         sound:Play()
     end)
 
-    -- status rotator
+    print("[SnowyHub] intro built, starting bar fill")
+
+    -- status rotator (faster cycle)
     local alive = true
     local statuses = { "checking integrity", "linking modules", "warming the orb", "sync complete" }
     task.spawn(function()
@@ -599,31 +601,42 @@ function Intro.build(onDone)
         while alive and status.Parent do
             status.Text = statuses[i]
             i = (i % #statuses) + 1
-            task.wait(1.1)
+            task.wait(0.6)
         end
     end)
 
-    -- fill the bar over ~4s
+    -- fill the bar over 2.3s (fast)
     pcall(function()
-        UI.tween(barFill, 4, { Size = UDim2.new(1, 0, 1, 0) }, Enum.EasingStyle.Quart)
+        UI.tween(barFill, 2.3, { Size = UDim2.new(1, 0, 1, 0) }, Enum.EasingStyle.Quart)
     end)
-    task.wait(4.1)
+    task.wait(2.4)
     alive = false
     pcall(function() status.Text = "unsealing" end)
-    task.wait(0.4)
+    task.wait(0.2)
+    print("[SnowyHub] bar done, shattering")
 
-    -- shatter -> reveal -> onDone, each stage wrapped so one failure doesn't block the chain
-    local ok1 = pcall(function() Intro.shatter(screen) end)
-    if not ok1 then pcall(function() screen:Destroy() end) end
+    local ok1, err1 = pcall(function() Intro.shatter(screen) end)
+    if not ok1 then
+        warn("[SnowyHub] shatter err:", err1)
+        pcall(function() screen:Destroy() end)
+    end
+    print("[SnowyHub] shatter done, revealing")
 
-    local ok2 = pcall(function() Intro.hollowPurpleReveal() end)
-    if not ok2 then pcall(function()
-        for _, c in ipairs(Root:GetChildren()) do
-            if c.Name == "HollowReveal" then c:Destroy() end
-        end
-    end) end
+    local ok2, err2 = pcall(function() Intro.hollowPurpleReveal() end)
+    if not ok2 then
+        warn("[SnowyHub] reveal err:", err2)
+        pcall(function()
+            for _, c in ipairs(Root:GetChildren()) do
+                if c.Name == "HollowReveal" then c:Destroy() end
+            end
+        end)
+    end
+    print("[SnowyHub] reveal done, calling onDone")
 
-    if onDone then pcall(onDone) end
+    if onDone then
+        local ok3, err3 = pcall(onDone)
+        if not ok3 then warn("[SnowyHub] onDone err:", err3) end
+    end
 end
 
 function Intro.shatter(screen)
@@ -667,7 +680,7 @@ function Intro.shatter(screen)
             local dx = (c - cols / 2) * (120 + math.random(0, 80)) + math.random(-40, 40)
             local dy = (r - rows / 2) * (120 + math.random(0, 80)) + math.random(-40, 40) - 200
             local rot = math.random(-180, 180)
-            TweenService:Create(shard, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            TweenService:Create(shard, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
                 Position = UDim2.new(0, c * cellW + dx, 0, r * cellH + dy),
                 Rotation = rot,
                 BackgroundTransparency = 1,
@@ -675,7 +688,7 @@ function Intro.shatter(screen)
         end
     end
 
-    task.wait(0.75)
+    task.wait(0.5)
     pcall(function() screen:Destroy() end)
     pcall(function() shardHost:Destroy() end)
 end
@@ -703,18 +716,18 @@ function Intro.hollowPurpleReveal()
     Intro.makeHollowPurple(slot, 300, 132)
 
     -- grow in
-    UI.tween(slot, 0.6, { Size = UDim2.new(0, 360, 0, 360) },
+    UI.tween(slot, 0.4, { Size = UDim2.new(0, 360, 0, 360) },
         Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
-    task.wait(1.3)
+    task.wait(0.7)
 
     -- shoot to top-left corner, shrink
-    UI.tween(slot, 0.55, {
+    UI.tween(slot, 0.4, {
         Position = UDim2.new(0, 48, 0, 48),
         Size = UDim2.new(0, 36, 0, 36),
     }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-    UI.tween(layer, 0.55, { BackgroundTransparency = 1 })
-    task.wait(0.6)
+    UI.tween(layer, 0.4, { BackgroundTransparency = 1 })
+    task.wait(0.45)
 
     pcall(function() layer:Destroy() end)
 end
@@ -2316,20 +2329,31 @@ safe_call("ESP.init",      function() ESP.init() end)
 safe_call("Movement.init", function() Movement.init() end)
 safe_call("Hitbox.init",   function() Hitbox.init() end)
 
+print("[SnowyHub] boot — v1.1, commit pending")
+
 local hubShown = false
 local function showHub()
     if hubShown then return end
     hubShown = true
+    print("[SnowyHub] showing hub")
     safe_call("buildHub", function() buildHub() end)
     pcall(function()
         notify("snowy hub", "loaded — right shift to hide", "good", 5)
         notify("made by crscx", "aim · esp · movement · combat · skins", "", 6)
     end)
+    print("[SnowyHub] hub up")
 end
 
--- watchdog: if cutscene hangs or errors, force the hub up after 12s
-task.delay(12, showHub)
+-- watchdog: if cutscene hangs or errors, force the hub up after 6s
+task.delay(6, function()
+    if not hubShown then
+        warn("[SnowyHub] watchdog fired — cutscene stalled, forcing hub")
+        showHub()
+    end
+end)
 
-safe_call("Intro.build", function()
-    Intro.build(showHub)
+task.spawn(function()
+    safe_call("Intro.build", function()
+        Intro.build(showHub)
+    end)
 end)
