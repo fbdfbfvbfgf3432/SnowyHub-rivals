@@ -1784,43 +1784,50 @@ function ESP.init()
     Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then ESP.create(p) end end)
     Players.PlayerRemoving:Connect(function(p) ESP.destroy(p) end)
 
+    local function updateOne(p, e, camPos)
+        if not p.Character or not alive(p) then
+            e.gui.Enabled = false
+            return
+        end
+        local vis = Flags.ESPEnabled
+        if Flags.ESPTeamCheck and isTeammate(p) then vis = false end
+        e.gui.Enabled = vis
+        if not vis then return end
+
+        local part = getHRP(p)
+        if not part then return end
+        local d = (camPos - part.Position).Magnitude
+        if d > Flags.ESPMaxDistance then
+            e.gui.Enabled = false
+            return
+        end
+
+        e.box.Visible  = Flags.ESPBox
+        e.name.Visible = Flags.ESPName
+        e.dist.Visible = Flags.ESPDistance
+        e.hpBg.Visible = Flags.ESPHealth
+        e.dist.Text = string.format("%dm", math.floor(d))
+
+        local col = isTeammate(p) and Flags.ESPColor or Flags.ESPEnemyColor
+        local stroke = e.box:FindFirstChildOfClass("UIStroke")
+        if stroke then stroke.Color = col end
+
+        local hum = p.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            local pct = hum.Health / math.max(1, hum.MaxHealth)
+            e.hpFill.Size = UDim2.new(1, 0, pct, 0)
+            e.hpFill.BackgroundColor3 = Color3.fromRGB(
+                math.floor(255 * (1 - pct)),
+                math.floor(220 * pct),
+                math.floor(120 * pct)
+            )
+        end
+    end
+
     RunService.RenderStepped:Connect(function()
         local camPos = Camera().CFrame.Position
         for p, e in pairs(ESP.cache) do
-            if not p.Character or not alive(p) then
-                e.gui.Enabled = false
-            else
-                local vis = Flags.ESPEnabled
-                if Flags.ESPTeamCheck and isTeammate(p) then vis = false end
-                e.gui.Enabled = vis
-                if not vis then goto cont end
-
-                local part = getHRP(p)
-                if not part then goto cont end
-                local d = (camPos - part.Position).Magnitude
-                if d > Flags.ESPMaxDistance then e.gui.Enabled = false goto cont end
-
-                e.box.Visible = Flags.ESPBox
-                e.name.Visible = Flags.ESPName
-                e.dist.Visible = Flags.ESPDistance
-                e.hpBg.Visible = Flags.ESPHealth
-                e.dist.Text = string.format("%dm", math.floor(d))
-
-                local col = isTeammate(p) and Flags.ESPColor or Flags.ESPEnemyColor
-                e.box:FindFirstChildOfClass("UIStroke").Color = col
-
-                local hum = p.Character:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    local pct = hum.Health / math.max(1, hum.MaxHealth)
-                    e.hpFill.Size = UDim2.new(1, 0, pct, 0)
-                    e.hpFill.BackgroundColor3 = Color3.fromRGB(
-                        math.floor(255 * (1 - pct)),
-                        math.floor(220 * pct),
-                        math.floor(120 * pct)
-                    )
-                end
-            end
-            ::cont::
+            updateOne(p, e, camPos)
         end
     end)
 end
