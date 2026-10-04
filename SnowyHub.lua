@@ -238,9 +238,199 @@ end
 
 -- =====================================================================
 -- INTRO CUTSCENE
--- Loading screen -> loading bar -> shatter -> hollow purple reveal
+-- Procedural hollow-purple orb (no external assets).
+-- Loading screen -> loading bar -> shatter -> hollow purple reveal.
 -- =====================================================================
 local Intro = {}
+
+-- Build a hollow-purple orb visual from pure Frames + gradients + strokes.
+-- Returns the wrapping Frame so caller can tween/position it.
+function Intro.makeHollowPurple(parent, size, zbase)
+    zbase = zbase or 100
+    local wrap = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, size, 0, size),
+        BackgroundTransparency = 1,
+        ZIndex = zbase,
+        Parent = parent,
+    })
+
+    -- outer soft glow (big transparent circle with radial gradient)
+    local outerGlow = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(1.8, 0, 1.8, 0),
+        BackgroundColor3 = Color3.fromRGB(170, 90, 255),
+        BackgroundTransparency = 0.55,
+        BorderSizePixel = 0,
+        ZIndex = zbase,
+        Parent = wrap,
+    })
+    UI.corner(outerGlow, 999)
+    UI.new("UIGradient", {
+        Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.3),
+            NumberSequenceKeypoint.new(0.6, 0.85),
+            NumberSequenceKeypoint.new(1, 1),
+        },
+        Parent = outerGlow,
+    })
+
+    -- mid glow
+    local midGlow = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(1.3, 0, 1.3, 0),
+        BackgroundColor3 = Color3.fromRGB(200, 130, 255),
+        BackgroundTransparency = 0.4,
+        BorderSizePixel = 0,
+        ZIndex = zbase + 1,
+        Parent = wrap,
+    })
+    UI.corner(midGlow, 999)
+    UI.new("UIGradient", {
+        Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.2),
+            NumberSequenceKeypoint.new(1, 1),
+        },
+        Parent = midGlow,
+    })
+
+    -- main orb body (purple sphere look)
+    local orb = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(180, 110, 255),
+        BorderSizePixel = 0,
+        ZIndex = zbase + 2,
+        Parent = wrap,
+    })
+    UI.corner(orb, 999)
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(240, 200, 255)),
+            ColorSequenceKeypoint.new(0.4, Color3.fromRGB(190, 120, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(70, 30, 160)),
+        },
+        Rotation = 90,
+        Parent = orb,
+    })
+    UI.stroke(orb, Color3.fromRGB(240, 220, 255), 2, 0.3)
+
+    -- highlight shine (top-left)
+    local shine = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.33, 0, 0.28, 0),
+        Size = UDim2.new(0.4, 0, 0.22, 0),
+        BackgroundColor3 = Color3.fromRGB(255, 240, 255),
+        BackgroundTransparency = 0.35,
+        BorderSizePixel = 0,
+        ZIndex = zbase + 3,
+        Parent = orb,
+    })
+    UI.corner(shine, 999)
+    UI.new("UIGradient", {
+        Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.2),
+            NumberSequenceKeypoint.new(1, 1),
+        },
+        Parent = shine,
+    })
+
+    -- darker core (bottom-right swirl)
+    local core = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.62, 0, 0.68, 0),
+        Size = UDim2.new(0.5, 0, 0.5, 0),
+        BackgroundColor3 = Color3.fromRGB(80, 30, 160),
+        BackgroundTransparency = 0.45,
+        BorderSizePixel = 0,
+        ZIndex = zbase + 3,
+        Parent = orb,
+    })
+    UI.corner(core, 999)
+    UI.new("UIGradient", {
+        Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.3),
+            NumberSequenceKeypoint.new(1, 1),
+        },
+        Parent = core,
+    })
+
+    -- orbit ring (dashed look via rotating stroked ellipse)
+    local ringContainer = UI.new("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(1.25, 0, 0.55, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ZIndex = zbase + 4,
+        Parent = wrap,
+    })
+    local ringEllipse = UI.new("Frame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ZIndex = zbase + 4,
+        Parent = ringContainer,
+    })
+    UI.corner(ringEllipse, 999)
+    UI.stroke(ringEllipse, Color3.fromRGB(150, 220, 255), 2, 0.1)
+
+    -- lightning bolts (thin frames at random angles, flicker)
+    local bolts = {}
+    local numBolts = 10
+    for i = 1, numBolts do
+        local bolt = UI.new("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(0, 2, 0, size * 0.9),
+            BackgroundColor3 = Color3.fromRGB(220, 200, 255),
+            BorderSizePixel = 0,
+            Rotation = (i / numBolts) * 360,
+            BackgroundTransparency = 0.3,
+            ZIndex = zbase + 5,
+            Parent = wrap,
+        })
+        UI.corner(bolt, 1)
+        UI.new("UIGradient", {
+            Transparency = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 0.1),
+                NumberSequenceKeypoint.new(0.3, 0.6),
+                NumberSequenceKeypoint.new(0.5, 0.2),
+                NumberSequenceKeypoint.new(0.7, 0.7),
+                NumberSequenceKeypoint.new(1, 0.1),
+            },
+            Parent = bolt,
+        })
+        table.insert(bolts, bolt)
+    end
+
+    -- animate everything in one coroutine
+    local alive = true
+    wrap.AncestryChanged:Connect(function(_, p)
+        if not p then alive = false end
+    end)
+    task.spawn(function()
+        local t = 0
+        while alive and wrap.Parent do
+            local dt = RunService.RenderStepped:Wait()
+            t = t + dt
+            outerGlow.BackgroundTransparency = 0.5 + 0.15 * math.sin(t * 2.5)
+            midGlow.BackgroundTransparency  = 0.35 + 0.12 * math.sin(t * 3 + 0.5)
+            orb.Rotation = math.sin(t * 1.3) * 4
+            ringContainer.Rotation = (t * 70) % 360
+            for i, bolt in ipairs(bolts) do
+                bolt.Rotation = (i / numBolts) * 360 + math.sin(t * 5 + i) * 10
+                bolt.BackgroundTransparency = 0.2 + math.random() * 0.55
+            end
+        end
+    end)
+
+    return wrap
+end
 
 function Intro.build(onDone)
     local screen = UI.new("Frame", {
@@ -252,17 +442,24 @@ function Intro.build(onDone)
         Parent = Root,
     })
 
-    -- deep purple radial haze behind everything
-    local haze = UI.new("ImageLabel", {
-        BackgroundTransparency = 1,
+    -- radial haze: pure Frame + gradient, no asset
+    local haze = UI.new("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(1.4, 0, 1.4, 0),
-        Image = "rbxassetid://4155801252", -- soft radial
-        ImageColor3 = Color3.fromRGB(60, 20, 110),
-        ImageTransparency = 0.35,
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(40, 15, 75),
+        BackgroundTransparency = 0.2,
+        BorderSizePixel = 0,
         ZIndex = 101,
         Parent = screen,
+    })
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 20, 100)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 2, 15)),
+        },
+        Rotation = 90,
+        Parent = haze,
     })
 
     -- center stack
@@ -275,92 +472,52 @@ function Intro.build(onDone)
         Parent = screen,
     })
 
-    -- Hollow purple orb (loader state, smaller & calmer)
-    local orbHolder = UI.new("Frame", {
+    -- hollow purple orb slot
+    local orbSlot = UI.new("Frame", {
         AnchorPoint = Vector2.new(0.5, 0),
-        Position = UDim2.new(0.5, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0, 20),
         Size = UDim2.new(0, 180, 0, 180),
         BackgroundTransparency = 1,
         ZIndex = 111,
         Parent = center,
     })
+    Intro.makeHollowPurple(orbSlot, 120, 111)
 
-    local orbGlow = UI.new("ImageLabel", {
-        BackgroundTransparency = 1,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(2.2, 0, 2.2, 0),
-        Image = "rbxassetid://4155801252",
-        ImageColor3 = Theme.Accent,
-        ImageTransparency = 0.55,
-        ZIndex = 111,
-        Parent = orbHolder,
-    })
-
-    local orb = UI.new("ImageLabel", {
-        BackgroundTransparency = 1,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0.7, 0, 0.7, 0),
-        Image = HOLLOW_PURPLE_IMAGE,
-        ScaleType = Enum.ScaleType.Fit,
-        ZIndex = 112,
-        Parent = orbHolder,
-    })
-
-    -- electricity ring (rotating dashed ellipse built from thin frames)
-    local ring = UI.new("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(1.15, 0, 0.55, 0),
-        BackgroundTransparency = 1,
-        ZIndex = 113,
-        Parent = orbHolder,
-    })
-    local ringImg = UI.new("ImageLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0),
-        Image = "rbxassetid://3570695787", -- white dashed ellipse (SquircleOutline fallback)
-        ImageColor3 = Color3.fromRGB(130, 200, 255),
-        ImageTransparency = 0.1,
-        ScaleType = Enum.ScaleType.Fit,
-        ZIndex = 113,
-        Parent = ring,
-    })
-
-    -- Chinese title (keeps 鏡花水月 glyphs, meaning tuned to "snowy hub" vibe)
-    local kanji = UI.new("TextLabel", {
+    -- Chinese title: 雪 云 枢 纽 (snowy cloud hub)
+    UI.new("TextLabel", {
         AnchorPoint = Vector2.new(0.5, 0),
-        Position = UDim2.new(0.5, 0, 0, 200),
+        Position = UDim2.new(0.5, 0, 0, 210),
         Size = UDim2.new(1, 0, 0, 40),
         BackgroundTransparency = 1,
         Font = Theme.FontBold,
         TextSize = 32,
         TextColor3 = Theme.Text,
-        Text = "雪  云  枢  纽", -- Snowy Cloud Hub, kept CJK visual
+        Text = "雪  云  枢  纽",
         ZIndex = 112,
         Parent = center,
     })
 
-    -- Snowy Hub wordmark (purple themed)
+    -- Snowy Hub wordmark (purple themed, gradient)
     local wordmark = UI.new("TextLabel", {
         AnchorPoint = Vector2.new(0.5, 0),
-        Position = UDim2.new(0.5, 0, 0, 248),
-        Size = UDim2.new(1, 0, 0, 28),
+        Position = UDim2.new(0.5, 0, 0, 258),
+        Size = UDim2.new(1, 0, 0, 24),
         BackgroundTransparency = 1,
         Font = Theme.FontBold,
-        TextSize = 18,
+        TextSize = 16,
         TextColor3 = Theme.AccentGlow,
         Text = "S N O W Y   H U B",
-        TextTransparency = 0.1,
         ZIndex = 112,
         Parent = center,
     })
-    UI.gradient(wordmark, ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Theme.Accent),
-        ColorSequenceKeypoint.new(0.5, Theme.AccentGlow),
-        ColorSequenceKeypoint.new(1, Theme.Accent),
-    }, 0)
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Theme.AccentDeep),
+            ColorSequenceKeypoint.new(0.5, Theme.AccentGlow),
+            ColorSequenceKeypoint.new(1, Theme.AccentDeep),
+        },
+        Parent = wordmark,
+    })
 
     -- loading bar
     local barBg = UI.new("Frame", {
@@ -381,10 +538,13 @@ function Intro.build(onDone)
         Parent = barBg,
     })
     UI.corner(barFill, 2)
-    UI.gradient(barFill, ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Theme.AccentDeep),
-        ColorSequenceKeypoint.new(1, Theme.AccentGlow),
-    }, 0)
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Theme.AccentDeep),
+            ColorSequenceKeypoint.new(1, Theme.AccentGlow),
+        },
+        Parent = barFill,
+    })
 
     local status = UI.new("TextLabel", {
         AnchorPoint = Vector2.new(0.5, 0),
@@ -399,7 +559,7 @@ function Intro.build(onDone)
         Parent = center,
     })
 
-    -- credit at the very bottom
+    -- Made By Crscx at the very bottom
     local credit = UI.new("TextLabel", {
         AnchorPoint = Vector2.new(0.5, 1),
         Position = UDim2.new(0.5, 0, 1, -24),
@@ -412,40 +572,28 @@ function Intro.build(onDone)
         ZIndex = 110,
         Parent = screen,
     })
-    UI.gradient(credit, ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Theme.Accent),
-        ColorSequenceKeypoint.new(0.5, Theme.AccentGlow),
-        ColorSequenceKeypoint.new(1, Theme.AccentDeep),
-    }, 0)
+    UI.new("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Theme.Accent),
+            ColorSequenceKeypoint.new(0.5, Theme.AccentGlow),
+            ColorSequenceKeypoint.new(1, Theme.AccentDeep),
+        },
+        Parent = credit,
+    })
 
     -- intro sound
-    local sound = UI.new("Sound", {
-        SoundId = INTRO_SOUND_ID,
-        Volume = 1.6,
-        PlayOnRemove = false,
-        Parent = screen,
-    })
-    pcall(function() sound:Play() end)
-
-    -- rotation + pulse loops
-    local alive = true
-    task.spawn(function()
-        local t = 0
-        while alive and ring.Parent do
-            t = t + RunService.RenderStepped:Wait()
-            ringImg.Rotation = (t * 90) % 360
-            orbGlow.ImageTransparency = 0.5 + 0.15 * math.sin(t * 3)
-            orb.Rotation = math.sin(t * 1.4) * 6
-        end
+    pcall(function()
+        local sound = UI.new("Sound", {
+            SoundId = INTRO_SOUND_ID,
+            Volume = 1.6,
+            Parent = screen,
+        })
+        sound:Play()
     end)
 
     -- status rotator
-    local statuses = {
-        "checking integrity",
-        "linking modules",
-        "warming the orb",
-        "sync complete",
-    }
+    local alive = true
+    local statuses = { "checking integrity", "linking modules", "warming the orb", "sync complete" }
     task.spawn(function()
         local i = 1
         while alive and status.Parent do
@@ -455,20 +603,32 @@ function Intro.build(onDone)
         end
     end)
 
-    -- fill the bar over ~4.5s
-    UI.tween(barFill, 4.5, { Size = UDim2.new(1, 0, 1, 0) }, Enum.EasingStyle.Quart)
-    task.wait(4.6)
-    alive = false
-    status.Text = "unsealing"
-
-    -- SHATTER: break the intro into shards and fling
-    Intro.shatter(screen, function()
-        Intro.hollowPurpleReveal(onDone)
+    -- fill the bar over ~4s
+    pcall(function()
+        UI.tween(barFill, 4, { Size = UDim2.new(1, 0, 1, 0) }, Enum.EasingStyle.Quart)
     end)
+    task.wait(4.1)
+    alive = false
+    pcall(function() status.Text = "unsealing" end)
+    task.wait(0.4)
+
+    -- shatter -> reveal -> onDone, each stage wrapped so one failure doesn't block the chain
+    local ok1 = pcall(function() Intro.shatter(screen) end)
+    if not ok1 then pcall(function() screen:Destroy() end) end
+
+    local ok2 = pcall(function() Intro.hollowPurpleReveal() end)
+    if not ok2 then pcall(function()
+        for _, c in ipairs(Root:GetChildren()) do
+            if c.Name == "HollowReveal" then c:Destroy() end
+        end
+    end) end
+
+    if onDone then pcall(onDone) end
 end
 
-function Intro.shatter(screen, done)
+function Intro.shatter(screen)
     local shardHost = UI.new("Frame", {
+        Name = "ShardHost",
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         ZIndex = 120,
@@ -479,20 +639,19 @@ function Intro.shatter(screen, done)
     local cols, rows = 10, 7
     local cellW, cellH = vp.X / cols, vp.Y / rows
 
-    -- flash first
     local flash = UI.new("Frame", {
         Size = UDim2.new(1, 0, 1, 0),
-        BackgroundColor3 = Theme.AccentGlow,
+        BackgroundColor3 = Color3.fromRGB(240, 220, 255),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
-        ZIndex = 121,
+        ZIndex = 125,
         Parent = shardHost,
     })
     UI.tween(flash, 0.08, { BackgroundTransparency = 0.1 })
     task.wait(0.08)
     UI.tween(flash, 0.4, { BackgroundTransparency = 1 })
 
-    screen.Visible = false
+    pcall(function() screen.Visible = false end)
 
     for r = 0, rows - 1 do
         for c = 0, cols - 1 do
@@ -501,31 +660,29 @@ function Intro.shatter(screen, done)
                 Position = UDim2.new(0, c * cellW, 0, r * cellH),
                 BackgroundColor3 = Theme.Background,
                 BorderSizePixel = 0,
-                ZIndex = 120,
+                ZIndex = 121,
                 Parent = shardHost,
             })
             UI.stroke(shard, Theme.Accent, 1, 0.4)
-            -- fling
-            local dx = (c - cols/2) * (120 + math.random(0, 80)) + math.random(-40, 40)
-            local dy = (r - rows/2) * (120 + math.random(0, 80)) + math.random(-40, 40) - 200
+            local dx = (c - cols / 2) * (120 + math.random(0, 80)) + math.random(-40, 40)
+            local dy = (r - rows / 2) * (120 + math.random(0, 80)) + math.random(-40, 40) - 200
             local rot = math.random(-180, 180)
-            TweenService:Create(shard, TweenInfo.new(0.75, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-                {
-                    Position = UDim2.new(0, c * cellW + dx, 0, r * cellH + dy),
-                    Rotation = rot,
-                    BackgroundTransparency = 1,
-                }):Play()
+            TweenService:Create(shard, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0, c * cellW + dx, 0, r * cellH + dy),
+                Rotation = rot,
+                BackgroundTransparency = 1,
+            }):Play()
         end
     end
 
-    task.wait(0.8)
-    screen:Destroy()
-    shardHost:Destroy()
-    if done then done() end
+    task.wait(0.75)
+    pcall(function() screen:Destroy() end)
+    pcall(function() shardHost:Destroy() end)
 end
 
-function Intro.hollowPurpleReveal(done)
+function Intro.hollowPurpleReveal()
     local layer = UI.new("Frame", {
+        Name = "HollowReveal",
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundColor3 = Theme.Background,
         BackgroundTransparency = 1,
@@ -533,90 +690,33 @@ function Intro.hollowPurpleReveal(done)
         ZIndex = 130,
         Parent = Root,
     })
-    UI.tween(layer, 0.25, { BackgroundTransparency = 0.25 })
+    UI.tween(layer, 0.25, { BackgroundTransparency = 0.3 })
 
-    -- center the orb big
-    local orbHolder = UI.new("Frame", {
+    local slot = UI.new("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(0, 20, 0, 20),
         BackgroundTransparency = 1,
         ZIndex = 131,
         Parent = layer,
     })
+    Intro.makeHollowPurple(slot, 300, 132)
 
-    local glow = UI.new("ImageLabel", {
-        BackgroundTransparency = 1,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(3, 0, 3, 0),
-        Image = "rbxassetid://4155801252",
-        ImageColor3 = Theme.Accent,
-        ImageTransparency = 0.3,
-        ZIndex = 131,
-        Parent = orbHolder,
-    })
+    -- grow in
+    UI.tween(slot, 0.6, { Size = UDim2.new(0, 360, 0, 360) },
+        Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
-    local orb = UI.new("ImageLabel", {
-        BackgroundTransparency = 1,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(1, 0, 1, 0),
-        Image = HOLLOW_PURPLE_IMAGE,
-        ScaleType = Enum.ScaleType.Fit,
-        ZIndex = 132,
-        Parent = orbHolder,
-    })
+    task.wait(1.3)
 
-    -- lightning streaks around it: ten short rotating frames at random angles
-    for i = 1, 12 do
-        local bolt = UI.new("Frame", {
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            Position = UDim2.new(0.5, 0, 0.5, 0),
-            Size = UDim2.new(0, 2, 0, 160),
-            BackgroundColor3 = Color3.fromRGB(220, 200, 255),
-            BorderSizePixel = 0,
-            Rotation = (i / 12) * 360 + math.random(-10, 10),
-            BackgroundTransparency = 0.3,
-            ZIndex = 131,
-            Parent = orbHolder,
-        })
-        UI.corner(bolt, 1)
-        local base = bolt.Rotation
-        task.spawn(function()
-            while bolt.Parent do
-                bolt.Rotation = base + math.random(-14, 14)
-                bolt.BackgroundTransparency = 0.2 + math.random() * 0.6
-                task.wait(0.04)
-            end
-        end)
-    end
-
-    -- grow in with overshoot
-    UI.tween(orbHolder, 0.55, { Size = UDim2.new(0, 420, 0, 420) }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-
-    -- pulse glow
-    task.spawn(function()
-        local t = 0
-        while glow.Parent do
-            t = t + RunService.RenderStepped:Wait()
-            glow.ImageTransparency = 0.25 + 0.2 * math.sin(t * 4)
-            orb.Rotation = (orb.Rotation + 0.4) % 360
-        end
-    end)
-
-    task.wait(1.4)
-
-    -- shoot orb toward top-left target, shrink
-    UI.tween(orbHolder, 0.6, {
-        Position = UDim2.new(0, 46, 0, 46),
-        Size = UDim2.new(0, 32, 0, 32),
+    -- shoot to top-left corner, shrink
+    UI.tween(slot, 0.55, {
+        Position = UDim2.new(0, 48, 0, 48),
+        Size = UDim2.new(0, 36, 0, 36),
     }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-    UI.tween(glow, 0.4, { ImageTransparency = 1 })
-    task.wait(0.7)
+    UI.tween(layer, 0.55, { BackgroundTransparency = 1 })
+    task.wait(0.6)
 
-    layer:Destroy()
-    if done then done() end
+    pcall(function() layer:Destroy() end)
 end
 
 -- =====================================================================
@@ -709,13 +809,13 @@ function Hub.build()
         Parent = topbar,
     })
 
-    local tLogo = UI.new("ImageLabel", {
+    local tLogoHost = UI.new("Frame", {
         BackgroundTransparency = 1,
         Size = UDim2.new(0, 20, 0, 20),
-        Image = HOLLOW_PURPLE_IMAGE,
         LayoutOrder = 1,
         Parent = topbar,
     })
+    Intro.makeHollowPurple(tLogoHost, 16, 60)
     local tTitle = UI.new("TextLabel", {
         BackgroundTransparency = 1,
         Size = UDim2.new(0, 90, 1, 0),
@@ -803,37 +903,15 @@ function Hub.build()
         Parent = sidebar,
     })
 
-    local sideLogo = UI.new("ImageLabel", {
+    local sideLogoHost = UI.new("Frame", {
         AnchorPoint = Vector2.new(0.5, 0),
-        Position = UDim2.new(0.5, 0, 0, 20),
-        Size = UDim2.new(0, 70, 0, 70),
+        Position = UDim2.new(0.5, 0, 0, 10),
+        Size = UDim2.new(0, 100, 0, 100),
         BackgroundTransparency = 1,
-        Image = HOLLOW_PURPLE_IMAGE,
-        ScaleType = Enum.ScaleType.Fit,
         ZIndex = 53,
         Parent = sideTop,
     })
-
-    local sideGlow = UI.new("ImageLabel", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0, 55),
-        Size = UDim2.new(0, 160, 0, 160),
-        BackgroundTransparency = 1,
-        Image = "rbxassetid://4155801252",
-        ImageColor3 = Theme.Accent,
-        ImageTransparency = 0.6,
-        ZIndex = 52,
-        Parent = sideTop,
-    })
-
-    task.spawn(function()
-        local t = 0
-        while sideLogo.Parent do
-            t = t + RunService.RenderStepped:Wait()
-            sideLogo.Rotation = (sideLogo.Rotation + 0.3) % 360
-            sideGlow.ImageTransparency = 0.55 + 0.15 * math.sin(t * 2.5)
-        end
-    end)
+    Intro.makeHollowPurple(sideLogoHost, 70, 53)
 
     local sideTitle = UI.new("TextLabel", {
         AnchorPoint = Vector2.new(0.5, 0),
@@ -1601,16 +1679,14 @@ local function makeFOV()
         ZIndex = 20,
         Parent = Root,
     })
-    local img = UI.new("ImageLabel", {
+    local ring = UI.new("Frame", {
         BackgroundTransparency = 1,
         Size = UDim2.new(1, 0, 1, 0),
-        Image = "rbxassetid://3570695787",
-        ImageColor3 = Theme.Accent,
-        ImageTransparency = 0.3,
-        ScaleType = Enum.ScaleType.Fit,
         ZIndex = 20,
         Parent = f,
     })
+    UI.corner(ring, 999)
+    UI.stroke(ring, Theme.Accent, 2, 0.2)
     f.Visible = false
     return f
 end
@@ -2240,12 +2316,20 @@ safe_call("ESP.init",      function() ESP.init() end)
 safe_call("Movement.init", function() Movement.init() end)
 safe_call("Hitbox.init",   function() Hitbox.init() end)
 
-safe_call("Intro.build", function()
-    Intro.build(function()
-        safe_call("buildHub", function() buildHub() end)
-        pcall(function()
-            notify("snowy hub", "loaded — right shift to hide", "good", 5)
-            notify("made by crscx", "aim · esp · movement · combat · skins", "", 6)
-        end)
+local hubShown = false
+local function showHub()
+    if hubShown then return end
+    hubShown = true
+    safe_call("buildHub", function() buildHub() end)
+    pcall(function()
+        notify("snowy hub", "loaded — right shift to hide", "good", 5)
+        notify("made by crscx", "aim · esp · movement · combat · skins", "", 6)
     end)
+end
+
+-- watchdog: if cutscene hangs or errors, force the hub up after 12s
+task.delay(12, showHub)
+
+safe_call("Intro.build", function()
+    Intro.build(showHub)
 end)
