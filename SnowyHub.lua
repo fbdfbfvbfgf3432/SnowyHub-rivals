@@ -76,6 +76,9 @@ local Theme = {
 
 local HOLLOW_PURPLE_IMAGE = "rbxassetid://136481529993647"
 local INTRO_SOUND_ID      = "rbxassetid://104910706944537"
+-- Wolf head logo for the hub (swap this ID if you have a different one you prefer)
+local WOLF_LOGO_IMAGE     = "rbxassetid://136481529993647"
+local LOGO_TINT           = Color3.fromRGB(190, 120, 255) -- purple tint applied to the logo
 
 -- =====================================================================
 -- Root ScreenGui
@@ -834,13 +837,15 @@ function Hub.build()
         Parent = topbar,
     })
 
-    local tLogoHost = UI.new("Frame", {
+    UI.new("ImageLabel", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(0, 20, 0, 20),
+        Size = UDim2.new(0, 22, 0, 22),
+        Image = WOLF_LOGO_IMAGE,
+        ImageColor3 = LOGO_TINT,
+        ScaleType = Enum.ScaleType.Fit,
         LayoutOrder = 1,
         Parent = topbar,
     })
-    Intro.makeHollowPurple(tLogoHost, 16, 60)
     local tTitle = UI.new("TextLabel", {
         BackgroundTransparency = 1,
         Size = UDim2.new(0, 90, 1, 0),
@@ -948,16 +953,31 @@ function Hub.build()
         Parent = banner,
     })
 
-    -- animated hollow purple logo centered in banner
-    local sideLogoHost = UI.new("Frame", {
+    -- soft purple glow behind the logo (static, no animation)
+    local logoGlow = UI.new("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0, 110, 0, 110),
+        Size = UDim2.new(0, 150, 0, 150),
+        BackgroundColor3 = Theme.Accent,
+        BackgroundTransparency = 0.85,
+        BorderSizePixel = 0,
+        ZIndex = 52,
+        Parent = banner,
+    })
+    UI.corner(logoGlow, 999)
+
+    -- static wolf logo centered in banner, purple tinted
+    UI.new("ImageLabel", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 108, 0, 108),
         BackgroundTransparency = 1,
+        Image = WOLF_LOGO_IMAGE,
+        ImageColor3 = LOGO_TINT,
+        ScaleType = Enum.ScaleType.Fit,
         ZIndex = 53,
         Parent = banner,
     })
-    Intro.makeHollowPurple(sideLogoHost, 80, 53)
 
     -- "Snowy Hub" wordmark + Chinese below the banner
     local nameRow = UI.new("Frame", {
@@ -1363,18 +1383,52 @@ function Widgets.toggle(parent, label, hint, default, tag, onChange)
     })
     UI.corner(f, 8)
 
-    UI.new("TextLabel", {
+    -- title row: label + optional tag, auto-flowing horizontally so they can't overlap
+    local titleRow = UI.new("Frame", {
         Position = UDim2.new(0, 12, 0, 4),
         Size = UDim2.new(1, -80, 0, 18),
+        BackgroundTransparency = 1,
+        ZIndex = 56,
+        Parent = f,
+    })
+    UI.new("UIListLayout", {
+        FillDirection = Enum.FillDirection.Horizontal,
+        Padding = UDim.new(0, 6),
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = titleRow,
+    })
+
+    UI.new("TextLabel", {
+        AutomaticSize = Enum.AutomaticSize.X,
+        Size = UDim2.new(0, 0, 1, 0),
         BackgroundTransparency = 1,
         Font = Theme.FontBold,
         TextSize = 13,
         TextColor3 = Theme.Text,
         TextXAlignment = Enum.TextXAlignment.Left,
         Text = label,
-        ZIndex = 56,
-        Parent = f,
+        LayoutOrder = 1,
+        ZIndex = 57,
+        Parent = titleRow,
     })
+
+    if tag then
+        UI.new("TextLabel", {
+            AutomaticSize = Enum.AutomaticSize.X,
+            Size = UDim2.new(0, 0, 1, 0),
+            BackgroundTransparency = 1,
+            Font = Theme.FontReg,
+            TextSize = 11,
+            TextColor3 = Theme.Danger,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Text = tag,
+            LayoutOrder = 2,
+            ZIndex = 57,
+            Parent = titleRow,
+        })
+    end
+
     UI.new("TextLabel", {
         Position = UDim2.new(0, 12, 0, 24),
         Size = UDim2.new(1, -80, 0, 16),
@@ -1387,21 +1441,6 @@ function Widgets.toggle(parent, label, hint, default, tag, onChange)
         ZIndex = 56,
         Parent = f,
     })
-
-    if tag then
-        UI.new("TextLabel", {
-            Position = UDim2.new(0, 12 + 6 * (#label), 0, 4),
-            Size = UDim2.new(0, 100, 0, 18),
-            BackgroundTransparency = 1,
-            Font = Theme.FontReg,
-            TextSize = 11,
-            TextColor3 = Theme.Danger,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Text = tag,
-            ZIndex = 56,
-            Parent = f,
-        })
-    end
 
     local btn = UI.new("TextButton", {
         AnchorPoint = Vector2.new(1, 0.5),
